@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --color-ink: #102a43;
+        --color-muted: #627d98;
+        --color-line: rgba(15, 23, 42, 0.08);
+        --color-brand: #0f766e;
+        --color-brand-soft: #ccfbf1;
+        --color-accent: #f59e0b;
+        --shadow-panel: 0 24px 60px rgba(15, 23, 42, 0.08);
+    }
+
+    body {
+        @apply min-h-screen bg-slate-50 text-slate-900 antialiased;
+        background:
+            radial-gradient(circle at top left, rgba(20, 184, 166, 0.14), transparent 34%),
+            radial-gradient(circle at top right, rgba(245, 158, 11, 0.12), transparent 24%),
+            linear-gradient(180deg, #f7fbff 0%, #eef6ff 100%);
+    }
+}
