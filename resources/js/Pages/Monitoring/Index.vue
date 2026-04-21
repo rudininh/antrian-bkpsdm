@@ -110,6 +110,9 @@ const statusClasses = {
                         <p class="mt-4 text-sm text-slate-500">Dipanggil pukul {{ call.called_at }}</p>
 
                         <div class="mt-4 flex flex-wrap gap-3">
+                            <button type="button" class="text-sm font-medium text-amber-700 hover:text-amber-900" @click="postAction('recall', call.queue_id)">
+                                Panggil Ulang
+                            </button>
                             <button type="button" class="text-sm font-medium text-sky-700 hover:text-sky-900" @click="postAction('start', call.queue_id)">
                                 Proses
                             </button>

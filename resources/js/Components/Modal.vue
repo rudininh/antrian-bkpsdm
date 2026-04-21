@@ -10,6 +10,10 @@ const props = defineProps({
         type: String,
         default: '2xl',
     },
+    panelClass: {
+        type: String,
+        default: '',
+    },
     closeable: {
         type: Boolean,
         default: true,
@@ -70,6 +74,7 @@ const maxWidthClass = computed(() => {
         lg: 'sm:max-w-lg',
         xl: 'sm:max-w-xl',
         '2xl': 'sm:max-w-2xl',
+        '4xl': 'sm:max-w-4xl',
     }[props.maxWidth];
 });
 </script>
@@ -113,7 +118,7 @@ const maxWidthClass = computed(() => {
                 <div
                     v-show="show"
                     class="mb-6 transform overflow-hidden rounded-lg bg-white shadow-xl transition-all sm:mx-auto sm:w-full"
-                    :class="maxWidthClass"
+                    :class="[maxWidthClass, props.panelClass]"
                 >
                     <slot v-if="showSlot" />
                 </div>

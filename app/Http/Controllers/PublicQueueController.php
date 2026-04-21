@@ -8,6 +8,8 @@ use App\Models\Service;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -20,7 +22,7 @@ class PublicQueueController extends Controller
         return Inertia::render('Public/TakeQueue', [
             'publicPage' => [
                 'title' => 'Ambil Nomor Antrian',
-                'subtitle' => 'Pilih layanan, ambil nomor secara mandiri, lalu pantau panggilan Anda dari layar monitor publik.',
+                'subtitle' => 'Ambil nomor dan pantau panggilan aktif dari satu layar yang sama. Tombol login petugas tetap tersedia di bagian atas.',
             ],
             'services' => $this->servicesForPublic($today),
             'liveCalls' => $this->liveCalls($today),
@@ -31,13 +33,10 @@ class PublicQueueController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'service_id' => ['required', 'exists:services,id'],
+            'service_code' => ['required', 'string', 'size:1'],
         ]);
 
-        $service = Service::query()
-            ->whereKey($data['service_id'])
-            ->where('is_active', true)
-            ->firstOrFail();
+        $service = $this->resolvePublicServiceByCode($data['service_code']);
 
         $queuedAt = now();
 
@@ -84,79 +83,47 @@ class PublicQueueController extends Controller
         ]);
     }
 
-    public function monitor(): Response
+    public function monitor(): RedirectResponse
     {
-        $today = Carbon::today();
-
-        return Inertia::render('Public/Monitor', [
-            'publicPage' => [
-                'title' => 'Monitor Panggilan Publik',
-                'subtitle' => 'Pantau nomor yang sedang dipanggil receptionist, status layanan aktif, dan antrean berikutnya secara real-time.',
-            ],
-            'liveCalls' => $this->liveCalls($today),
-            'recentlyCompleted' => Call::query()
-                ->with(['queue.service', 'counter'])
-                ->whereDate('called_at', $today)
-                ->where('status', 'completed')
-                ->latest('finished_at')
-                ->take(8)
-                ->get()
-                ->map(fn (Call $call) => [
-                    'id' => $call->id,
-                    'ticketNumber' => $call->queue?->ticket_number,
-                    'serviceName' => $call->queue?->service?->name,
-                    'counterName' => $call->counter?->name ?? 'Meja Receptionist',
-                    'finishedAt' => $call->finished_at?->format('H:i') ?? $call->called_at?->format('H:i'),
-                ])
-                ->values(),
-            'waitingByService' => Service::query()
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get()
-                ->map(fn (Service $service) => [
-                    'id' => $service->id,
-                    'name' => $service->name,
-                    'code' => $service->code,
-                    'waiting' => Queue::query()
-                        ->where('service_id', $service->id)
-                        ->whereDate('queue_date', $today)
-                        ->whereIn('status', ['waiting', 'called', 'serving'])
-                        ->count(),
-                    'nextTicket' => Queue::query()
-                        ->where('service_id', $service->id)
-                        ->whereDate('queue_date', $today)
-                        ->whereIn('status', ['waiting', 'called', 'serving'])
-                        ->orderByRaw("CASE status WHEN 'serving' THEN 1 WHEN 'called' THEN 2 ELSE 3 END")
-                        ->orderBy('queued_at')
-                        ->value('ticket_number'),
-                ])
-                ->values(),
-            'summary' => $this->summary($today),
-        ]);
+        return Redirect::route('public.queue.index');
     }
 
     protected function servicesForPublic(Carbon $today)
     {
-        return Service::query()
-            ->where('is_active', true)
-            ->orderBy('name')
+        $serviceMap = Service::query()
+            ->whereIn('code', $this->serviceCatalog()->pluck('code'))
             ->get()
-            ->map(fn (Service $service) => [
-                'id' => $service->id,
-                'name' => $service->name,
-                'code' => $service->code,
-                'description' => $service->description,
-                'waitingCount' => Queue::query()
-                    ->where('service_id', $service->id)
-                    ->whereDate('queue_date', $today)
-                    ->whereIn('status', ['waiting', 'called', 'serving'])
-                    ->count(),
-                'calledCount' => Queue::query()
-                    ->where('service_id', $service->id)
-                    ->whereDate('queue_date', $today)
-                    ->where('status', 'called')
-                    ->count(),
-            ])
+            ->keyBy('code');
+
+        return $this->serviceCatalog()
+            ->map(function (array $catalog) use ($today, $serviceMap) {
+                /** @var Service|null $service */
+                $service = $serviceMap->get($catalog['code']);
+
+                return [
+                    'id' => $service?->id,
+                    'name' => $catalog['name'],
+                    'code' => $catalog['code'],
+                    'groupTitle' => $catalog['groupTitle'],
+                    'description' => $catalog['description'],
+                    'items' => $catalog['items'],
+                    'available' => $service?->is_active ?? true,
+                    'waitingCount' => $service
+                        ? Queue::query()
+                            ->where('service_id', $service->id)
+                            ->whereDate('queue_date', $today)
+                            ->whereIn('status', ['waiting', 'called', 'serving'])
+                            ->count()
+                        : 0,
+                    'calledCount' => $service
+                        ? Queue::query()
+                            ->where('service_id', $service->id)
+                            ->whereDate('queue_date', $today)
+                            ->where('status', 'called')
+                            ->count()
+                        : 0,
+                ];
+            })
             ->values();
     }
 
@@ -167,8 +134,9 @@ class PublicQueueController extends Controller
             ->whereDate('called_at', $today)
             ->whereIn('status', ['called', 'serving'])
             ->latest('called_at')
-            ->take(6)
             ->get()
+            ->unique('queue_id')
+            ->take(4)
                 ->map(fn (Call $call) => [
                     'id' => $call->id,
                     'ticketNumber' => $call->queue?->ticket_number,
@@ -198,5 +166,76 @@ class PublicQueueController extends Controller
             ->count() + 1;
 
         return sprintf('%s-%03d', strtoupper($service->code), $count);
+    }
+
+    protected function resolvePublicServiceByCode(string $code): Service
+    {
+        $catalog = $this->serviceCatalog()->firstWhere('code', strtoupper($code));
+
+        abort_unless($catalog, 422, 'Kode layanan tidak valid.');
+
+        return Service::query()->updateOrCreate(
+            ['code' => $catalog['code']],
+            [
+                'name' => $catalog['name'],
+                'description' => $catalog['description'],
+                'is_active' => true,
+            ],
+        );
+    }
+
+    protected function serviceCatalog(): Collection
+    {
+        return collect([
+            [
+                'code' => 'A',
+                'groupTitle' => 'Layanan Administrasi Kepegawaian',
+                'name' => 'Administrasi Kepegawaian',
+                'description' => 'Kenaikan pangkat, KGB, SK CPNS/PNS/PPPK, perubahan data, dan legalisir dokumen.',
+                'items' => ['Kenaikan Pangkat (KP)', 'Kenaikan Gaji Berkala (KGB)', 'SK CPNS / PNS / PPPK', 'Perubahan Data', 'Legalisir dokumen'],
+            ],
+            [
+                'code' => 'B',
+                'groupTitle' => 'Mutasi & Penempatan',
+                'name' => 'Mutasi dan Penempatan',
+                'description' => 'Mutasi antar instansi, rotasi jabatan, penempatan awal, dan perpindahan unit kerja.',
+                'items' => ['Mutasi antar instansi', 'Rotasi jabatan', 'Penempatan awal', 'Perpindahan unit kerja'],
+            ],
+            [
+                'code' => 'C',
+                'groupTitle' => 'Pengembangan Kompetensi',
+                'name' => 'Pengembangan Kompetensi',
+                'description' => 'Diklat, pelatihan, izin belajar, tugas belajar, dan sertifikasi.',
+                'items' => ['Diklat / Pelatihan', 'Izin belajar / tugas belajar', 'Sertifikasi'],
+            ],
+            [
+                'code' => 'D',
+                'groupTitle' => 'Disiplin & Status ASN',
+                'name' => 'Disiplin dan Status ASN',
+                'description' => 'Klarifikasi pelanggaran, proses hukuman disiplin, dan pembinaan ASN.',
+                'items' => ['Klarifikasi pelanggaran', 'Proses hukuman disiplin', 'Pembinaan'],
+            ],
+            [
+                'code' => 'E',
+                'groupTitle' => 'Kesejahteraan & Hak',
+                'name' => 'Kesejahteraan dan Hak',
+                'description' => 'Layanan Taspen, pensiun, cuti, dan tunjangan pegawai.',
+                'items' => ['Taspen', 'Pensiun', 'Cuti', 'Tunjangan'],
+            ],
+            [
+                'code' => 'F',
+                'groupTitle' => 'Layanan Data & Informasi',
+                'name' => 'Layanan Data dan Informasi',
+                'description' => 'Permintaan data ASN, verifikasi data, dan konsultasi kepegawaian.',
+                'items' => ['Permintaan data ASN', 'Verifikasi data', 'Konsultasi kepegawaian'],
+            ],
+            [
+                'code' => 'G',
+                'groupTitle' => 'Layanan Umum',
+                'name' => 'Layanan Umum',
+                'description' => 'Konsultasi umum dan helpdesk aplikasi sebagai layanan buffer.',
+                'items' => ['Konsultasi umum', 'Helpdesk aplikasi'],
+            ],
+        ]);
     }
 }

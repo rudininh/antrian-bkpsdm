@@ -1,8 +1,10 @@
 <script setup>
+import { appRoute } from '@/utils/route';
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 const page = usePage();
+const route = appRoute;
 
 const appName = computed(() => page.props.appName ?? 'Antrian BKPSDM');
 const user = computed(() => page.props.auth?.user);
@@ -20,6 +22,7 @@ const navItems = computed(() =>
         permissions.value.manageQueues
             ? { name: 'Panggilan', href: route('monitoring.index'), active: route().current('monitoring.*'), hint: 'Live' }
             : null,
+        { name: 'Ambil Nomor', href: route('public.queue.index'), active: route().current('public.queue.*') || route().current('public.monitor'), hint: 'Publik' },
         { name: 'Profil', href: route('profile.edit'), active: route().current('profile.*'), hint: 'Akun' },
     ].filter(Boolean),
 );
@@ -60,6 +63,22 @@ const navItems = computed(() =>
                 <p class="mt-2 text-lg font-semibold text-white">{{ user?.name }}</p>
                 <p class="text-sm text-slate-300">{{ user?.email }}</p>
                 <p class="mt-2 text-xs uppercase tracking-[0.25em] text-teal-300">{{ user?.role }}</p>
+                <div class="mt-4 flex flex-col gap-2">
+                    <Link
+                        :href="route('public.queue.index')"
+                        class="inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                    >
+                        Buka Ambil Nomor
+                    </Link>
+                    <Link
+                        :href="route('logout')"
+                        method="post"
+                        as="button"
+                        class="inline-flex items-center justify-center rounded-2xl bg-rose-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-400"
+                    >
+                        Logout
+                    </Link>
+                </div>
             </div>
         </div>
     </aside>

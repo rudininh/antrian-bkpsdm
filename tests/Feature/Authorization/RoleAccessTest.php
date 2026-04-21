@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Authorization;
 
-use App\Models\Counter;
 use App\Models\Queue;
 use App\Models\Service;
 use App\Models\User;
@@ -21,10 +20,6 @@ class RoleAccessTest extends TestCase
 
         $this->actingAs($admin)
             ->get(route('services.index'))
-            ->assertOk();
-
-        $this->actingAs($admin)
-            ->get(route('counters.index'))
             ->assertOk();
     }
 
@@ -48,12 +43,6 @@ class RoleAccessTest extends TestCase
         $service = Service::query()->create([
             'name' => 'Verifikasi',
             'code' => 'A',
-            'is_active' => true,
-        ]);
-
-        Counter::query()->create([
-            'name' => 'Loket 1',
-            'code' => 'L1',
             'is_active' => true,
         ]);
 

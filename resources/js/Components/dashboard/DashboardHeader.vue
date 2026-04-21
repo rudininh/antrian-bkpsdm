@@ -1,6 +1,9 @@
 <script setup>
+import { appRoute } from '@/utils/route';
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
+
+const route = appRoute;
 
 defineProps({
     title: {
@@ -30,7 +33,7 @@ const user = computed(() => page.props.auth?.user);
                 <p class="mt-1 text-sm text-slate-500">{{ description }}</p>
             </div>
 
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
                 <div class="rounded-2xl bg-teal-50 px-4 py-3 text-sm text-teal-900">
                     <div class="font-semibold">Tanggal Operasional</div>
                     <div class="text-teal-700">{{ dateLabel }}</div>
@@ -38,6 +41,9 @@ const user = computed(() => page.props.auth?.user);
                 <div class="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     <div class="font-semibold">Operator</div>
                     <div class="text-amber-700">{{ user?.name }}</div>
+                </div>
+                <div class="flex items-center justify-center rounded-2xl bg-sky-50 px-4 py-3 text-sm text-sky-800">
+                    <Link :href="route('public.queue.index')" class="font-semibold text-sky-900">Ke Ambil Nomor</Link>
                 </div>
                 <div class="flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
                     <Link :href="route('profile.edit')" class="font-semibold text-slate-900">Profil</Link>

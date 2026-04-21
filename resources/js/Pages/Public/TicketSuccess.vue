@@ -1,6 +1,7 @@
 <script setup>
 import PublicQueueLayout from '@/Layouts/PublicQueueLayout.vue';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 defineOptions({
     layout: PublicQueueLayout,
@@ -22,6 +23,37 @@ defineProps({
 });
 
 const page = usePage();
+const countdown = ref(5);
+const redirectLabel = computed(() => `${countdown.value} detik`);
+let timeoutId = null;
+let intervalId = null;
+
+onMounted(() => {
+    intervalId = window.setInterval(() => {
+        if (countdown.value > 1) {
+            countdown.value -= 1;
+        }
+    }, 1000);
+
+    router.reload({
+        only: ['liveCalls', 'summary'],
+        preserveScroll: true,
+    });
+
+    timeoutId = window.setTimeout(() => {
+        router.visit(page.props.urls.publicQueueIndex);
+    }, 5000);
+});
+
+onBeforeUnmount(() => {
+    if (intervalId) {
+        window.clearInterval(intervalId);
+    }
+
+    if (timeoutId) {
+        window.clearTimeout(timeoutId);
+    }
+});
 </script>
 
 <template>
@@ -59,22 +91,16 @@ const page = usePage();
                     <div class="mt-2 text-2xl font-semibold text-teal-900">
                         {{ ticket.status === 'waiting' ? 'Menunggu Panggilan' : ticket.status }}
                     </div>
-                    <p class="mt-2 text-sm text-teal-800">Tetap pantau monitor publik agar nomor Anda tidak terlewat.</p>
+                    <p class="mt-2 text-sm text-teal-800">Halaman ini akan kembali otomatis ke ambil antrian dalam {{ redirectLabel }}.</p>
                 </article>
             </div>
 
             <div class="mt-6 flex flex-wrap gap-3">
                 <Link
-                    :href="page.props.urls.publicMonitor"
+                    :href="page.props.urls.publicQueueIndex"
                     class="rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
                 >
-                    Lihat Monitor Publik
-                </Link>
-                <Link
-                    :href="page.props.urls.publicQueueIndex"
-                    class="rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
-                >
-                    Ambil Nomor Lagi
+                    Kembali ke Ambil Antrian
                 </Link>
             </div>
         </section>

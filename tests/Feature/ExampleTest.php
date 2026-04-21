@@ -14,11 +14,20 @@ class ExampleTest extends TestCase
     /**
      * A basic test example.
      */
-    public function test_guests_are_redirected_to_login_from_home(): void
+    public function test_guests_can_view_public_home_page(): void
     {
+        $this->withoutVite();
+
         $response = $this->get('/');
 
-        $response->assertRedirect(route('login', absolute: false));
+        $response
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Public/TakeQueue')
+                ->has('services')
+                ->has('liveCalls')
+                ->has('summary')
+            );
     }
 
     public function test_authenticated_users_can_view_the_dashboard(): void

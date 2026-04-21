@@ -42,10 +42,13 @@ class DatabaseSeeder extends Seeder
         );
 
         $services = collect([
-            ['name' => 'Verifikasi Data', 'code' => 'A', 'description' => 'Layanan verifikasi berkas dan data ASN.'],
-            ['name' => 'Kenaikan Pangkat', 'code' => 'B', 'description' => 'Pemrosesan administrasi kenaikan pangkat.'],
-            ['name' => 'Mutasi ASN', 'code' => 'C', 'description' => 'Pengelolaan perpindahan dan mutasi pegawai.'],
-            ['name' => 'Konsultasi Administrasi', 'code' => 'D', 'description' => 'Sesi konsultasi layanan kepegawaian.'],
+            ['name' => 'Administrasi Kepegawaian', 'code' => 'A', 'description' => 'Kenaikan pangkat, KGB, SK CPNS/PNS/PPPK, perubahan data, dan legalisir dokumen.'],
+            ['name' => 'Mutasi dan Penempatan', 'code' => 'B', 'description' => 'Mutasi antar instansi, rotasi jabatan, penempatan awal, dan perpindahan unit kerja.'],
+            ['name' => 'Pengembangan Kompetensi', 'code' => 'C', 'description' => 'Diklat, pelatihan, izin belajar, tugas belajar, dan sertifikasi.'],
+            ['name' => 'Disiplin dan Status ASN', 'code' => 'D', 'description' => 'Klarifikasi pelanggaran, proses hukuman disiplin, dan pembinaan ASN.'],
+            ['name' => 'Kesejahteraan dan Hak', 'code' => 'E', 'description' => 'Layanan Taspen, pensiun, cuti, dan tunjangan pegawai.'],
+            ['name' => 'Layanan Data dan Informasi', 'code' => 'F', 'description' => 'Permintaan data ASN, verifikasi data, dan konsultasi kepegawaian.'],
+            ['name' => 'Layanan Umum', 'code' => 'G', 'description' => 'Konsultasi umum dan helpdesk aplikasi sebagai layanan buffer.'],
         ])->map(fn (array $service) => Service::query()->updateOrCreate(
             ['code' => $service['code']],
             $service + ['is_active' => true],

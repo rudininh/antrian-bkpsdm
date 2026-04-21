@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring.index');
         Route::post('/monitoring/{queue}/call', [MonitoringController::class, 'call'])->name('monitoring.call');
+        Route::post('/monitoring/{queue}/recall', [MonitoringController::class, 'recall'])->name('monitoring.recall');
         Route::post('/monitoring/{queue}/start', [MonitoringController::class, 'start'])->name('monitoring.start');
         Route::post('/monitoring/{queue}/complete', [MonitoringController::class, 'complete'])->name('monitoring.complete');
         Route::post('/monitoring/{queue}/skip', [MonitoringController::class, 'skip'])->name('monitoring.skip');

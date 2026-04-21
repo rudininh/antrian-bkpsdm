@@ -19,9 +19,12 @@ class MonitoringController extends Controller
         $activeCalls = Call::query()
             ->with(['queue.service', 'counter'])
             ->whereDate('called_at', $today)
+            ->whereIn('status', ['called', 'serving'])
             ->latest('called_at')
+            ->get()
+            ->unique('queue_id')
             ->take(8)
-            ->get();
+            ->values();
 
         $waitingQueues = Queue::query()
             ->with('service')
@@ -96,6 +99,45 @@ class MonitoringController extends Controller
         ]);
 
         return back()->with('success', 'Layanan mulai diproses.');
+    }
+
+    public function recall(Queue $queue): RedirectResponse
+    {
+        if (! in_array($queue->status, ['called', 'serving'], true)) {
+            return back()->with('success', 'Nomor ini sudah tidak aktif untuk dipanggil ulang.');
+        }
+
+        $timestamp = now();
+        $counter = $queue->counter ?? $this->resolveReceptionCounter();
+
+        $queue->update([
+            'counter_id' => $counter->id,
+            'called_at' => $timestamp,
+        ]);
+
+        $activeCall = $queue->calls()
+            ->whereIn('status', ['called', 'serving'])
+            ->latest('called_at')
+            ->first();
+
+        if ($activeCall) {
+            $activeCall->update([
+                'counter_id' => $counter->id,
+                'status' => $queue->status,
+                'called_at' => $timestamp,
+                'started_at' => $queue->status === 'serving' ? $queue->started_at : null,
+            ]);
+        } else {
+            Call::query()->create([
+                'queue_id' => $queue->id,
+                'counter_id' => $counter->id,
+                'status' => $queue->status,
+                'called_at' => $timestamp,
+                'started_at' => $queue->status === 'serving' ? $queue->started_at : null,
+            ]);
+        }
+
+        return back()->with('success', 'Panggilan ulang berhasil dikirim ke monitor publik.');
     }
 
     public function complete(Queue $queue): RedirectResponse
