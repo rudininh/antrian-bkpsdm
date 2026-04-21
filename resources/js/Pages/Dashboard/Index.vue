@@ -1,20 +1,10 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
-import { h } from 'vue';
 import StatCard from '@/Components/dashboard/StatCard.vue';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
 
 defineOptions({
-    layout: (page) =>
-        h(
-            DashboardLayout,
-            {
-                title: page.props.meta?.title,
-                description: page.props.meta?.description,
-                dateLabel: page.props.meta?.dateLabel,
-            },
-            () => page,
-        ),
+    layout: DashboardLayout,
 });
 
 defineProps({
@@ -78,7 +68,7 @@ const statusClasses = {
                             <tr>
                                 <th class="px-5 py-4">Nomor</th>
                                 <th class="px-5 py-4">Layanan</th>
-                                <th class="px-5 py-4">Loket</th>
+                                <th class="px-5 py-4">Petugas</th>
                                 <th class="px-5 py-4">Jam</th>
                                 <th class="px-5 py-4">Status</th>
                             </tr>
@@ -87,7 +77,7 @@ const statusClasses = {
                             <tr v-for="queue in queues" :key="queue.ticket">
                                 <td class="px-5 py-4 font-semibold text-slate-900">{{ queue.ticket }}</td>
                                 <td class="px-5 py-4">{{ queue.service }}</td>
-                                <td class="px-5 py-4">{{ queue.counter }}</td>
+                                <td class="px-5 py-4">{{ queue.desk }}</td>
                                 <td class="px-5 py-4 text-slate-500">{{ queue.queued_at }}</td>
                                 <td class="px-5 py-4">
                                     <span
@@ -106,9 +96,9 @@ const statusClasses = {
             <div class="space-y-6">
                 <article class="rounded-[2rem] border border-white/70 bg-slate-950 p-6 text-white shadow-[var(--shadow-panel)]">
                     <p class="text-sm uppercase tracking-[0.25em] text-teal-300">Insight Hari Ini</p>
-                    <h3 class="mt-4 text-3xl font-semibold">Arus layanan terbaca langsung dari data operasional loket.</h3>
+                    <h3 class="mt-4 text-3xl font-semibold">Arus layanan terbaca langsung dari operasional satu meja receptionist.</h3>
                     <p class="mt-4 text-sm leading-6 text-slate-300">
-                        Statistik pada kartu ringkasan dihitung dari antrian hari ini, loket aktif, dan histori panggilan yang sudah selesai.
+                        Statistik pada kartu ringkasan dihitung dari antrian hari ini, panggilan receptionist, dan histori layanan yang sudah selesai.
                     </p>
                 </article>
 

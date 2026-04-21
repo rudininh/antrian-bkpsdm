@@ -1,6 +1,31 @@
 <script setup>
 import DashboardHeader from '@/Components/dashboard/DashboardHeader.vue';
 import DashboardSidebar from '@/Components/dashboard/DashboardSidebar.vue';
+import { usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
+
+const props = defineProps({
+    title: {
+        type: String,
+        default: '',
+    },
+    description: {
+        type: String,
+        default: '',
+    },
+    dateLabel: {
+        type: String,
+        default: '',
+    },
+});
+
+const page = usePage();
+const meta = computed(() => page.props.meta ?? {});
+const resolvedTitle = computed(() => props.title || meta.value.title || 'Dashboard');
+const resolvedDescription = computed(
+    () => props.description || meta.value.description || 'Ringkasan operasional layanan hari ini.',
+);
+const resolvedDateLabel = computed(() => props.dateLabel || meta.value.dateLabel || '');
 </script>
 
 <template>
@@ -9,7 +34,11 @@ import DashboardSidebar from '@/Components/dashboard/DashboardSidebar.vue';
             <DashboardSidebar />
 
             <div class="flex-1">
-                <DashboardHeader :title="title" :description="description" :date-label="dateLabel" />
+                <DashboardHeader
+                    :title="resolvedTitle"
+                    :description="resolvedDescription"
+                    :date-label="resolvedDateLabel"
+                />
 
                 <main class="mt-6">
                     <slot />
@@ -18,22 +47,3 @@ import DashboardSidebar from '@/Components/dashboard/DashboardSidebar.vue';
         </div>
     </div>
 </template>
-
-<script>
-export default {
-    props: {
-        title: {
-            type: String,
-            default: 'Dashboard',
-        },
-        description: {
-            type: String,
-            default: 'Ringkasan operasional layanan hari ini.',
-        },
-        dateLabel: {
-            type: String,
-            default: '',
-        },
-    },
-};
-</script>

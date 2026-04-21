@@ -6,7 +6,6 @@ use App\Models\Call;
 use App\Models\Counter;
 use App\Models\Queue;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -44,7 +43,7 @@ class MonitoringController extends Controller
                 'queue_id' => $call->queue_id,
                 'ticket_number' => $call->queue?->ticket_number,
                 'service_name' => $call->queue?->service?->name,
-                'counter_name' => $call->counter?->name,
+                'counter_name' => $call->counter?->name ?? 'Receptionist',
                 'status' => $call->status,
                 'called_at' => $call->called_at?->format('H:i:s'),
                 'notes' => $call->notes,
@@ -55,40 +54,33 @@ class MonitoringController extends Controller
                 'service_name' => $queue->service?->name,
                 'queued_at' => $queue->queued_at?->format('H:i'),
             ])->values(),
-            'counters' => Counter::query()
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get(['id', 'name', 'code']),
             'meta' => [
-                'title' => 'Monitoring Panggilan',
-                'description' => 'Pantau panggilan aktif dan antrian menunggu secara live.',
+                'title' => 'Panel Panggilan Receptionist',
+                'description' => 'Kelola panggilan aktif dan antrian menunggu dari satu meja receptionist.',
                 'dateLabel' => $today->translatedFormat('d F Y'),
             ],
         ]);
     }
 
-    public function call(Request $request, Queue $queue): RedirectResponse
+    public function call(Queue $queue): RedirectResponse
     {
-        $data = $request->validate([
-            'counter_id' => ['required', 'exists:counters,id'],
-        ]);
-
         $timestamp = now();
+        $counter = $this->resolveReceptionCounter();
 
         $queue->update([
-            'counter_id' => $data['counter_id'],
+            'counter_id' => $counter->id,
             'status' => 'called',
             'called_at' => $timestamp,
         ]);
 
         Call::query()->create([
             'queue_id' => $queue->id,
-            'counter_id' => $data['counter_id'],
+            'counter_id' => $counter->id,
             'status' => 'called',
             'called_at' => $timestamp,
         ]);
 
-        return back()->with('success', 'Antrian berhasil dipanggil.');
+        return back()->with('success', 'Nomor antrian berhasil dipanggil oleh receptionist.');
     }
 
     public function start(Queue $queue): RedirectResponse
@@ -133,5 +125,17 @@ class MonitoringController extends Controller
         ]);
 
         return back()->with('success', 'Antrian ditandai terlewati.');
+    }
+
+    protected function resolveReceptionCounter(): Counter
+    {
+        return Counter::query()->firstOrCreate(
+            ['code' => 'RCP'],
+            [
+                'name' => 'Receptionist',
+                'location' => 'Meja Receptionist',
+                'is_active' => true,
+            ],
+        );
     }
 }

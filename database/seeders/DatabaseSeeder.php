@@ -51,14 +51,14 @@ class DatabaseSeeder extends Seeder
             $service + ['is_active' => true],
         ));
 
-        $counters = collect(range(1, 6))->map(fn (int $index) => Counter::query()->updateOrCreate(
-            ['code' => 'L'.$index],
+        $receptionCounter = Counter::query()->updateOrCreate(
+            ['code' => 'RCP'],
             [
-                'name' => 'Loket '.$index,
-                'location' => 'Lantai 1',
+                'name' => 'Receptionist',
+                'location' => 'Meja Receptionist',
                 'is_active' => true,
             ],
-        ));
+        );
 
         Call::query()->delete();
         Queue::query()->delete();
@@ -70,7 +70,7 @@ class DatabaseSeeder extends Seeder
             foreach (range(1, 8) as $number) {
                 $status = $statuses[($serviceIndex + $number - 1) % count($statuses)];
                 $counter = in_array($status, ['completed', 'serving', 'called'], true)
-                    ? $counters[($serviceIndex + $number - 1) % $counters->count()]
+                    ? $receptionCounter
                     : null;
                 $queuedAt = $today->copy()->setTime(8, 0)->addMinutes((($serviceIndex * 8) + $number) * 7);
 

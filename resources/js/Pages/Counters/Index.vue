@@ -6,19 +6,10 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
-import { computed, h, ref } from 'vue';
+import { computed, ref } from 'vue';
 
 defineOptions({
-    layout: (page) =>
-        h(
-            DashboardLayout,
-            {
-                title: page.props.meta?.title,
-                description: page.props.meta?.description,
-                dateLabel: page.props.meta?.dateLabel,
-            },
-            () => page,
-        ),
+    layout: DashboardLayout,
 });
 
 const props = defineProps({

@@ -1,36 +1,22 @@
 <script setup>
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
-import { Head, router, useForm, usePage } from '@inertiajs/vue3';
-import { computed, h, onBeforeUnmount, onMounted, ref } from 'vue';
+import { Head, router, usePage } from '@inertiajs/vue3';
+import { computed, onBeforeUnmount, onMounted } from 'vue';
 
 defineOptions({
-    layout: (page) =>
-        h(
-            DashboardLayout,
-            {
-                title: page.props.meta?.title,
-                description: page.props.meta?.description,
-                dateLabel: page.props.meta?.dateLabel,
-            },
-            () => page,
-        ),
+    layout: DashboardLayout,
 });
 
 const props = defineProps({
     summary: Object,
     activeCalls: Array,
     waitingQueues: Array,
-    counters: Array,
     meta: Object,
 });
 
 const page = usePage();
 const flashMessage = computed(() => page.props.flash?.success);
-const callForm = useForm({
-    counter_id: '',
-});
-const selectedCounter = ref({});
 
 let intervalId = null;
 
@@ -49,18 +35,8 @@ onBeforeUnmount(() => {
     }
 });
 
-const setCounter = (queueId, counterId) => {
-    selectedCounter.value = {
-        ...selectedCounter.value,
-        [queueId]: counterId,
-    };
-};
-
 const callQueue = (queueId) => {
-    callForm.counter_id = selectedCounter.value[queueId] ?? '';
-    callForm.post(route('monitoring.call', queueId), {
-        preserveScroll: true,
-    });
+    router.post(route('monitoring.call', queueId), {}, { preserveScroll: true });
 };
 
 const postAction = (name, queueId) => {
@@ -151,7 +127,7 @@ const statusClasses = {
             <article class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[var(--shadow-panel)]">
                 <div>
                     <h3 class="text-lg font-semibold text-slate-900">Daftar Tunggu</h3>
-                    <p class="mt-1 text-sm text-slate-500">Pilih loket lalu panggil nomor berikutnya.</p>
+                    <p class="mt-1 text-sm text-slate-500">Panggil nomor berikutnya dari meja receptionist.</p>
                 </div>
 
                 <div class="mt-6 space-y-4">
@@ -163,27 +139,15 @@ const statusClasses = {
                         <div class="flex items-center justify-between gap-4">
                             <div>
                                 <p class="text-xl font-semibold text-slate-900">{{ queue.ticket_number }}</p>
-                                <p class="text-sm text-slate-500">{{ queue.service_name }} • {{ queue.queued_at }}</p>
+                                <p class="text-sm text-slate-500">{{ queue.service_name }} - {{ queue.queued_at }}</p>
                             </div>
                         </div>
 
                         <div class="mt-4 flex flex-col gap-3 md:flex-row">
-                            <select
-                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-600 focus:ring-teal-600"
-                                :value="selectedCounter[queue.id] ?? ''"
-                                @change="setCounter(queue.id, $event.target.value)"
-                            >
-                                <option value="">Pilih loket</option>
-                                <option v-for="counter in props.counters" :key="counter.id" :value="counter.id">
-                                    {{ counter.name }} ({{ counter.code }})
-                                </option>
-                            </select>
-
                             <PrimaryButton type="button" @click="callQueue(queue.id)">
-                                Panggil
+                                Panggil ke Receptionist
                             </PrimaryButton>
                         </div>
-                        <p v-if="callForm.errors.counter_id" class="mt-2 text-sm text-rose-600">{{ callForm.errors.counter_id }}</p>
                     </div>
                 </div>
             </article>

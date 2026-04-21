@@ -3,8 +3,8 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 use Inertia\Middleware;
-use Tighten\Ziggy\Ziggy;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -43,9 +43,13 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
             ],
-            'ziggy' => fn (): array => [
-                ...(new Ziggy)->toArray(),
-                'location' => $request->url(),
+            'urls' => [
+                'home' => Route::has('home') ? route('home') : '/',
+                'login' => Route::has('login') ? route('login') : '/login',
+                'dashboard' => Route::has('dashboard') ? route('dashboard') : '/dashboard',
+                'publicQueueIndex' => Route::has('public.queue.index') ? route('public.queue.index') : '/ambil-antrian',
+                'publicQueueStore' => Route::has('public.queue.store') ? route('public.queue.store') : '/ambil-antrian',
+                'publicMonitor' => Route::has('public.monitor') ? route('public.monitor') : '/monitor-publik',
             ],
         ];
     }

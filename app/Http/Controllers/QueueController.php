@@ -29,19 +29,14 @@ class QueueController extends Controller
                     'ticket_number' => $queue->ticket_number,
                     'service_id' => $queue->service_id,
                     'service_name' => $queue->service?->name,
-                    'counter_id' => $queue->counter_id,
-                    'counter_name' => $queue->counter?->name,
                     'queue_date' => $queue->queue_date?->toDateString(),
                     'status' => $queue->status,
                     'queued_at' => $queue->queued_at?->format('Y-m-d\TH:i'),
                     'queued_label' => $queue->queued_at?->format('d M Y H:i'),
+                    'counter_name' => $queue->counter?->name,
                     'notes' => $queue->notes,
                 ]),
             'services' => Service::query()
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get(['id', 'name', 'code']),
-            'counters' => Counter::query()
                 ->where('is_active', true)
                 ->orderBy('name')
                 ->get(['id', 'name', 'code']),
@@ -55,7 +50,7 @@ class QueueController extends Controller
             ],
             'meta' => [
                 'title' => 'Kelola Antrian',
-                'description' => 'Input dan kelola antrian operasional harian.',
+                'description' => 'Input dan kelola antrian harian dari meja receptionist.',
                 'dateLabel' => $today->translatedFormat('d F Y'),
             ],
         ]);
@@ -66,17 +61,20 @@ class QueueController extends Controller
         $data = $this->validateQueue($request);
         $service = Service::query()->findOrFail($data['service_id']);
         $queuedAt = Carbon::parse($data['queued_at']);
+        $counter = $this->shouldAssignReceptionCounter($data['status'])
+            ? $this->resolveReceptionCounter()
+            : null;
 
         Queue::query()->create([
             'service_id' => $service->id,
-            'counter_id' => $data['counter_id'] ?? null,
+            'counter_id' => $counter?->id,
             'ticket_number' => $data['ticket_number'] ?: $this->generateTicketNumber($service, $queuedAt),
             'queue_date' => $queuedAt->toDateString(),
             'status' => $data['status'],
             'queued_at' => $queuedAt,
-            'called_at' => in_array($data['status'], ['called', 'serving', 'completed'], true) ? now() : null,
-            'started_at' => in_array($data['status'], ['serving', 'completed'], true) ? now() : null,
-            'completed_at' => $data['status'] === 'completed' ? now() : null,
+            'called_at' => in_array($data['status'], ['called', 'serving', 'completed'], true) ? $queuedAt : null,
+            'started_at' => in_array($data['status'], ['serving', 'completed'], true) ? $queuedAt : null,
+            'completed_at' => $data['status'] === 'completed' ? $queuedAt : null,
             'notes' => $data['notes'] ?? null,
         ]);
 
@@ -88,14 +86,20 @@ class QueueController extends Controller
         $data = $this->validateQueue($request, $queue);
         $service = Service::query()->findOrFail($data['service_id']);
         $queuedAt = Carbon::parse($data['queued_at']);
+        $counter = $this->shouldAssignReceptionCounter($data['status'])
+            ? $this->resolveReceptionCounter()
+            : null;
 
         $queue->update([
             'service_id' => $service->id,
-            'counter_id' => $data['counter_id'] ?? null,
+            'counter_id' => $counter?->id,
             'ticket_number' => $data['ticket_number'] ?: $queue->ticket_number,
             'queue_date' => $queuedAt->toDateString(),
             'status' => $data['status'],
             'queued_at' => $queuedAt,
+            'called_at' => in_array($data['status'], ['called', 'serving', 'completed'], true) ? ($queue->called_at ?? $queuedAt) : null,
+            'started_at' => in_array($data['status'], ['serving', 'completed'], true) ? ($queue->started_at ?? $queuedAt) : null,
+            'completed_at' => $data['status'] === 'completed' ? ($queue->completed_at ?? $queuedAt) : null,
             'notes' => $data['notes'] ?? null,
         ]);
 
@@ -113,7 +117,6 @@ class QueueController extends Controller
     {
         return $request->validate([
             'service_id' => ['required', 'exists:services,id'],
-            'counter_id' => ['nullable', 'exists:counters,id'],
             'ticket_number' => ['nullable', 'string', 'max:50', Rule::unique('queues', 'ticket_number')->ignore($queue?->id)],
             'status' => ['required', 'in:waiting,called,serving,completed,skipped,cancelled'],
             'queued_at' => ['required', 'date'],
@@ -129,5 +132,22 @@ class QueueController extends Controller
             ->count() + 1;
 
         return sprintf('%s-%03d', strtoupper($service->code), $count);
+    }
+
+    protected function shouldAssignReceptionCounter(string $status): bool
+    {
+        return in_array($status, ['called', 'serving', 'completed'], true);
+    }
+
+    protected function resolveReceptionCounter(): Counter
+    {
+        return Counter::query()->firstOrCreate(
+            ['code' => 'RCP'],
+            [
+                'name' => 'Receptionist',
+                'location' => 'Meja Receptionist',
+                'is_active' => true,
+            ],
+        );
     }
 }

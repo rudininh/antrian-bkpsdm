@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Counter;
 use App\Models\Queue;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -21,7 +20,8 @@ class DashboardController extends Controller
             ->get();
 
         $completedQueues = $todayQueues->where('status', 'completed');
-        $activeCounters = Counter::query()->where('is_active', true)->count();
+        $waitingQueues = $todayQueues->where('status', 'waiting')->count();
+        $calledQueues = $todayQueues->where('status', 'called')->count();
 
         $averageWait = (int) round(
             $completedQueues
@@ -36,9 +36,9 @@ class DashboardController extends Controller
                 'change' => $todayQueues->whereIn('status', ['waiting', 'called', 'serving'])->count().' aktif',
             ],
             [
-                'label' => 'Loket Aktif',
-                'value' => $activeCounters,
-                'change' => Counter::query()->where('is_active', false)->count().' nonaktif',
+                'label' => 'Menunggu Panggilan',
+                'value' => $waitingQueues,
+                'change' => $calledQueues.' sudah dipanggil',
             ],
             [
                 'label' => 'Rata-rata Tunggu',
@@ -57,7 +57,7 @@ class DashboardController extends Controller
             ->map(fn (Queue $queue) => [
                 'ticket' => $queue->ticket_number,
                 'service' => $queue->service?->name,
-                'counter' => $queue->counter?->name ?? 'Belum ditetapkan',
+                'desk' => $queue->counter?->name ?? ($queue->status === 'waiting' ? 'Belum dipanggil' : 'Receptionist'),
                 'status' => $this->mapStatus($queue->status),
                 'queued_at' => $queue->queued_at?->format('H:i'),
             ])
@@ -77,7 +77,7 @@ class DashboardController extends Controller
             'serviceBreakdown' => $serviceBreakdown,
             'meta' => [
                 'title' => 'Dashboard Operasional',
-                'description' => 'Pantau arus layanan, status antrian, dan kinerja loket hari ini.',
+                'description' => 'Pantau arus layanan, status antrian, dan panggilan dari meja receptionist hari ini.',
                 'dateLabel' => $today->translatedFormat('d F Y'),
             ],
         ]);

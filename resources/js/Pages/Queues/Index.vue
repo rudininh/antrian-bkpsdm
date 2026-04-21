@@ -5,25 +5,15 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
-import { computed, h, ref } from 'vue';
+import { computed, ref } from 'vue';
 
 defineOptions({
-    layout: (page) =>
-        h(
-            DashboardLayout,
-            {
-                title: page.props.meta?.title,
-                description: page.props.meta?.description,
-                dateLabel: page.props.meta?.dateLabel,
-            },
-            () => page,
-        ),
+    layout: DashboardLayout,
 });
 
 const props = defineProps({
     queues: Array,
     services: Array,
-    counters: Array,
     statusOptions: Array,
     meta: Object,
 });
@@ -34,7 +24,6 @@ const flashMessage = computed(() => page.props.flash?.success);
 
 const form = useForm({
     service_id: '',
-    counter_id: '',
     ticket_number: '',
     status: 'waiting',
     queued_at: new Date().toISOString().slice(0, 16),
@@ -59,7 +48,6 @@ const submit = () => {
 const editItem = (queue) => {
     editingId.value = queue.id;
     form.service_id = queue.service_id;
-    form.counter_id = queue.counter_id ?? '';
     form.ticket_number = queue.ticket_number;
     form.status = queue.status;
     form.queued_at = queue.queued_at;
@@ -141,21 +129,6 @@ const statusBadge = (status) => ({
                     </div>
 
                     <div>
-                        <InputLabel for="queue-counter" value="Loket" />
-                        <select
-                            id="queue-counter"
-                            v-model="form.counter_id"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-600 focus:ring-teal-600"
-                        >
-                            <option value="">Belum ditetapkan</option>
-                            <option v-for="counter in props.counters" :key="counter.id" :value="counter.id">
-                                {{ counter.name }} ({{ counter.code }})
-                            </option>
-                        </select>
-                        <InputError class="mt-2" :message="form.errors.counter_id" />
-                    </div>
-
-                    <div>
                         <InputLabel for="queue-ticket" value="Nomor tiket" />
                         <TextInput id="queue-ticket" v-model="form.ticket_number" class="mt-1 block w-full" />
                         <InputError class="mt-2" :message="form.errors.ticket_number" />
@@ -210,7 +183,7 @@ const statusBadge = (status) => ({
                             <tr>
                                 <th class="px-5 py-4">Nomor</th>
                                 <th class="px-5 py-4">Layanan</th>
-                                <th class="px-5 py-4">Loket</th>
+                                <th class="px-5 py-4">Petugas</th>
                                 <th class="px-5 py-4">Jam</th>
                                 <th class="px-5 py-4">Status</th>
                                 <th class="px-5 py-4 text-right">Aksi</th>
@@ -220,7 +193,7 @@ const statusBadge = (status) => ({
                             <tr v-for="queue in props.queues" :key="queue.id">
                                 <td class="px-5 py-4 font-semibold text-slate-900">{{ queue.ticket_number }}</td>
                                 <td class="px-5 py-4">{{ queue.service_name }}</td>
-                                <td class="px-5 py-4">{{ queue.counter_name || 'Belum ditetapkan' }}</td>
+                                <td class="px-5 py-4">{{ queue.counter_name || (queue.status === 'waiting' ? 'Belum dipanggil' : 'Receptionist') }}</td>
                                 <td class="px-5 py-4">{{ queue.queued_label }}</td>
                                 <td class="px-5 py-4">
                                     <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="statusBadge(queue.status)">

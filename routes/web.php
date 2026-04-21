@@ -1,18 +1,18 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\CounterController;
 use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicQueueController;
 use App\Http\Controllers\QueueController;
 use App\Http\Controllers\ServiceController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return auth()->check()
-        ? to_route('dashboard')
-        : to_route('login');
-})->name('home');
+Route::get('/', [PublicQueueController::class, 'index'])->name('home');
+Route::get('/ambil-antrian', [PublicQueueController::class, 'index'])->name('public.queue.index');
+Route::post('/ambil-antrian', [PublicQueueController::class, 'store'])->name('public.queue.store');
+Route::get('/ambil-antrian/sukses/{queue}', [PublicQueueController::class, 'success'])->name('public.queue.success');
+Route::get('/monitor-publik', [PublicQueueController::class, 'monitor'])->name('public.monitor');
 
 Route::get('/dashboard', DashboardController::class)
     ->middleware(['auth', 'verified'])
@@ -28,11 +28,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/layanan', [ServiceController::class, 'store'])->name('services.store');
         Route::put('/layanan/{service}', [ServiceController::class, 'update'])->name('services.update');
         Route::delete('/layanan/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
-
-        Route::get('/loket', [CounterController::class, 'index'])->name('counters.index');
-        Route::post('/loket', [CounterController::class, 'store'])->name('counters.store');
-        Route::put('/loket/{counter}', [CounterController::class, 'update'])->name('counters.update');
-        Route::delete('/loket/{counter}', [CounterController::class, 'destroy'])->name('counters.destroy');
     });
 
     Route::middleware('can:manage-queues')->group(function () {
