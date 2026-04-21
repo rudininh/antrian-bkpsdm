@@ -14,7 +14,7 @@ const publicPage = computed(() => page.props.publicPage ?? {});
             <section class="mb-6 rounded-[2rem] border border-white/70 bg-white/90 px-5 py-5 shadow-[0_24px_70px_-50px_rgba(15,23,42,0.5)] sm:px-6">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
                     <div class="flex h-24 w-24 items-center justify-center rounded-[1.5rem] border border-slate-200 bg-slate-50 p-3 shadow-inner">
-                        <img src="/images/logo-kota-banjarmasin.png" alt="Logo Kota Banjarmasin" class="h-full w-full object-contain" />
+                        <img :src="urls.logoKotaBanjarmasin" alt="Logo Kota Banjarmasin" class="h-full w-full object-contain" />
                     </div>
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-[0.28em] text-teal-700">Pemerintah Kota Banjarmasin</p>

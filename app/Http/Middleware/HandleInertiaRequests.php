@@ -50,6 +50,7 @@ class HandleInertiaRequests extends Middleware
                 'publicQueueIndex' => Route::has('public.queue.index') ? route('public.queue.index') : '/ambil-antrian',
                 'publicQueueStore' => Route::has('public.queue.store') ? route('public.queue.store') : '/ambil-antrian',
                 'publicMonitor' => Route::has('public.monitor') ? route('public.monitor') : '/monitor-publik',
+                'logoKotaBanjarmasin' => asset('images/logo-kota-banjarmasin.png'),
             ],
         ];
     }
