@@ -54,7 +54,7 @@ const mobileNavItems = computed(() =>
         <div class="mx-auto flex min-h-screen max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:px-8">
             <DashboardSidebar />
 
-            <div class="flex-1">
+            <div class="min-w-0 flex-1">
                 <DashboardHeader
                     :title="resolvedTitle"
                     :description="resolvedDescription"
@@ -73,7 +73,7 @@ const mobileNavItems = computed(() =>
                     </Link>
                 </nav>
 
-                <main class="mt-6">
+                <main class="mt-6 min-w-0">
                     <slot />
                 </main>
 

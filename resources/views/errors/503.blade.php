@@ -3,7 +3,6 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="refresh" content="2">
     <title>503 - Sedang Maintenance</title>
     <style>
         :root {
@@ -200,7 +199,7 @@
 <body>
     <main class="shell">
         <section class="header">
-            <small>503 • Maintenance Mode</small>
+            <small>503 &bull; Maintenance Mode</small>
         </section>
 
         <section class="body">
@@ -241,7 +240,7 @@
 
             <div class="actions">
                 <button type="button" class="button button-primary" onclick="window.location.reload()">Coba Sekarang</button>
-                <a href="{{ url('/') }}" class="button button-secondary">Ke Halaman Utama</a>
+                <a href="/" class="button button-secondary">Ke Halaman Utama</a>
             </div>
         </section>
     </main>

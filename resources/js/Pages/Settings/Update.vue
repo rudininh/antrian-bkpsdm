@@ -115,8 +115,8 @@ watch(pollWatcher, (running) => {
             {{ flashError }}
         </div>
 
-        <section class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-            <article class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[var(--shadow-panel)]">
+        <section class="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+            <article class="min-w-0 rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[var(--shadow-panel)]">
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <h3 class="text-lg font-semibold text-slate-900">Status Repository</h3>
@@ -136,7 +136,7 @@ watch(pollWatcher, (running) => {
                     <div class="rounded-3xl bg-slate-50 p-5">
                         <p class="text-xs uppercase tracking-[0.25em] text-slate-500">Branch</p>
                         <p class="mt-3 text-2xl font-semibold text-slate-900">{{ gitStatus.branch }}</p>
-                        <p class="mt-2 text-sm text-slate-500">{{ gitStatus.remoteUrl }}</p>
+                        <p class="mt-2 break-all text-sm text-slate-500">{{ gitStatus.remoteUrl }}</p>
                     </div>
 
                     <div class="rounded-3xl p-5" :class="gitStatus.isUpToDate ? 'bg-emerald-50' : 'bg-amber-50'">
@@ -182,12 +182,12 @@ watch(pollWatcher, (running) => {
                             {{ gitClean ? 'Bersih' : 'Ada Perubahan' }}
                         </span>
                     </div>
-                    <pre class="mt-4 overflow-x-auto whitespace-pre-wrap text-sm leading-6 text-slate-200">{{ gitStatus.statusShort || 'Working tree clean' }}</pre>
+                    <pre class="mt-4 overflow-x-auto whitespace-pre-wrap break-words text-sm leading-6 text-slate-200">{{ gitStatus.statusShort || 'Working tree clean' }}</pre>
                 </div>
             </article>
 
-            <article class="space-y-6">
-                <section class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[var(--shadow-panel)]">
+            <article class="min-w-0 space-y-6">
+                <section class="overflow-hidden rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[var(--shadow-panel)]">
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <h3 class="text-lg font-semibold text-slate-900">Kontrol Server</h3>
@@ -206,7 +206,7 @@ watch(pollWatcher, (running) => {
                         <p class="mt-3 text-2xl font-semibold text-slate-900">
                             {{ isRunning ? 'Update sedang berjalan' : 'Siap menjalankan update' }}
                         </p>
-                        <p class="mt-2 text-sm text-slate-500">
+                        <p class="mt-2 break-all text-sm text-slate-500">
                             {{ systemStatus.updateBatExists ? systemStatus.updateBatPath : 'update.bat belum ditemukan di server.' }}
                         </p>
                         <p v-if="systemStatus.lock?.started_at" class="mt-2 text-sm text-slate-500">
@@ -264,7 +264,7 @@ watch(pollWatcher, (running) => {
                             class="rounded-3xl border border-slate-100 bg-slate-950 p-5 text-white"
                         >
                             <p class="font-mono text-xs uppercase tracking-[0.25em] text-slate-400">{{ command.label }}</p>
-                            <pre class="mt-3 overflow-x-auto whitespace-pre-wrap text-sm leading-6 text-slate-200">{{ command.output || '-' }}</pre>
+                            <pre class="mt-3 overflow-x-auto whitespace-pre-wrap break-words text-sm leading-6 text-slate-200">{{ command.output || '-' }}</pre>
                         </div>
                     </div>
                 </section>
@@ -276,17 +276,28 @@ watch(pollWatcher, (running) => {
                 <div>
                     <h3 class="text-lg font-semibold text-slate-900">Log Update Server</h3>
                     <p class="mt-1 text-sm text-slate-500">
-                        {{ isRunning ? 'Log sedang dipantau otomatis tiap 5 detik.' : 'Gunakan Refresh Status untuk memuat ulang log terbaru.' }}
+                        {{
+                            isRunning
+                                ? 'Log sedang dipantau otomatis tiap 5 detik. Area tampilannya dibatasi supaya panel tetap rapi.'
+                                : 'Gunakan Refresh Status untuk memuat ulang log terbaru.'
+                        }}
                     </p>
                 </div>
                 <div class="text-right text-sm text-slate-500">
-                    <p>{{ systemStatus.logPath }}</p>
+                    <p class="break-all">{{ systemStatus.logPath }}</p>
                     <p>Update terakhir log: {{ systemStatus.logUpdatedAt || '-' }}</p>
                 </div>
             </div>
 
-            <div class="mt-6 rounded-[1.75rem] bg-slate-950 p-5">
-                <pre class="max-h-[520px] overflow-auto whitespace-pre-wrap text-sm leading-6 text-slate-200">{{ updateLog.tail }}</pre>
+            <div class="mt-6 overflow-hidden rounded-[1.75rem] border border-slate-800 bg-slate-950">
+                <div class="flex items-center justify-between gap-3 border-b border-slate-800 px-4 py-3 text-xs uppercase tracking-[0.25em] text-slate-400">
+                    <span>Live log preview</span>
+                    <span>{{ isRunning ? 'Auto refresh aktif' : 'Manual refresh' }}</span>
+                </div>
+                <pre
+                    class="max-h-[420px] overflow-auto whitespace-pre-wrap break-words px-4 py-4 text-sm leading-6 text-slate-200"
+                    style="overflow-wrap:anywhere;"
+                >{{ updateLog.tail }}</pre>
             </div>
         </section>
     </div>
