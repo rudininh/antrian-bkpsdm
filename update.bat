@@ -7,9 +7,13 @@ cd /d "%~dp0"
 set "APP_NAME=Antrian BKPSDM"
 set "REMOTE_NAME=origin"
 set "MAINTENANCE_ENABLED=0"
+set "WAS_ALREADY_IN_MAINTENANCE=0"
 set "CURRENT_BRANCH="
 set "HAS_LOCAL_CHANGES=0"
 set "HAS_UNTRACKED_CONFLICTS=0"
+set "REPO_ALREADY_UP_TO_DATE=0"
+set "LOCAL_HEAD="
+set "REMOTE_HEAD="
 
 call :banner
 
@@ -59,13 +63,13 @@ echo [INFO] Composer      : %COMPOSER_CMD%
 echo [INFO] NPM           : %NPM_CMD%
 echo.
 
-echo [1/13] Mengecek branch aktif...
+echo [1/15] Mengecek branch aktif...
 for /f "delims=" %%i in ('"%GIT_CMD%" branch --show-current') do set "CURRENT_BRANCH=%%i"
 if not defined CURRENT_BRANCH set "CURRENT_BRANCH=main"
 echo Branch aktif: %CURRENT_BRANCH%
 echo.
 
-echo [2/13] Mengecek perubahan lokal...
+echo [2/15] Mengecek perubahan lokal...
 for /f "delims=" %%i in ('"%GIT_CMD%" status --porcelain') do (
     set "HAS_LOCAL_CHANGES=1"
 )
@@ -84,34 +88,72 @@ if "!HAS_LOCAL_CHANGES!"=="1" (
     echo.
 )
 
-echo [3/13] Mengambil data terbaru dari GitHub...
+echo [3/15] Mengecek status maintenance mode...
+call :detect_maintenance_mode
+if "!WAS_ALREADY_IN_MAINTENANCE!"=="1" (
+    echo [WARNING] Aplikasi sudah dalam maintenance mode sebelum update dijalankan.
+    echo Script akan menjaga status maintenance tetap aktif sampai Anda mematikannya manual.
+) else (
+    echo Aplikasi sedang online.
+)
+echo.
+
+echo [4/15] Mengambil data terbaru dari GitHub...
 "%GIT_CMD%" fetch %REMOTE_NAME%
 if errorlevel 1 goto :fail
 echo.
 
-echo [4/13] Memeriksa konflik file untracked sebelum pull...
+echo [5/15] Menganalisis status sinkronisasi repository...
+for /f "delims=" %%i in ('"%GIT_CMD%" rev-parse HEAD') do set "LOCAL_HEAD=%%i"
+if not defined LOCAL_HEAD goto :fail
+for /f "delims=" %%i in ('"%GIT_CMD%" rev-parse %REMOTE_NAME%/%CURRENT_BRANCH%') do set "REMOTE_HEAD=%%i"
+if not defined REMOTE_HEAD goto :fail
+
+echo Commit lokal : !LOCAL_HEAD!
+echo Commit remote: !REMOTE_HEAD!
+if /I "!LOCAL_HEAD!"=="!REMOTE_HEAD!" (
+    set "REPO_ALREADY_UP_TO_DATE=1"
+    echo [INFO] Repository sudah sinkron. Tidak ada commit baru untuk di-pull.
+) else (
+    echo [INFO] Ditemukan update baru di %REMOTE_NAME%/%CURRENT_BRANCH%.
+)
+echo.
+
+echo [6/15] Memeriksa konflik file untracked sebelum pull...
 call :check_untracked_conflicts
 if errorlevel 1 goto :fail
 if "!HAS_UNTRACKED_CONFLICTS!"=="1" goto :end
 echo Tidak ada konflik file untracked dengan update dari GitHub.
 echo.
 
-echo [5/13] Mengaktifkan maintenance mode...
-"%PHP_CMD%" artisan down --render="errors::503" --retry=60 >nul 2>nul
-if not errorlevel 1 (
-    set "MAINTENANCE_ENABLED=1"
-    echo Maintenance mode aktif.
+echo [7/15] Mengaktifkan maintenance mode...
+if "!WAS_ALREADY_IN_MAINTENANCE!"=="1" (
+    echo Maintenance mode sudah aktif dari awal. Langkah ini dilewati.
 ) else (
-    echo Maintenance mode dilewati.
+    "%PHP_CMD%" artisan down --render="errors::503" --retry=60 >nul 2>nul
+    if not errorlevel 1 (
+        set "MAINTENANCE_ENABLED=1"
+        echo Maintenance mode aktif.
+    ) else (
+        echo Maintenance mode gagal diaktifkan atau dilewati.
+    )
 )
 echo.
 
-echo [6/13] Menarik update branch %CURRENT_BRANCH%...
-"%GIT_CMD%" pull %REMOTE_NAME% %CURRENT_BRANCH%
-if errorlevel 1 goto :fail
+echo [8/15] Sinkronisasi source code...
+if "!REPO_ALREADY_UP_TO_DATE!"=="1" (
+    echo [INFO] Langkah git pull dilewati karena repository sudah "Already up to date."
+) else (
+    set "GIT_PULL_LOG=%TEMP%\antrian_pull_%RANDOM%_%RANDOM%.tmp"
+    "%GIT_CMD%" pull %REMOTE_NAME% %CURRENT_BRANCH% > "!GIT_PULL_LOG!" 2>&1
+    set "PULL_EXIT_CODE=!ERRORLEVEL!"
+    type "!GIT_PULL_LOG!"
+    call :cleanup_temp_file "!GIT_PULL_LOG!"
+    if not "!PULL_EXIT_CODE!"=="0" goto :fail
+)
 echo.
 
-echo [7/13] Install/update dependency PHP...
+echo [9/15] Install/update dependency PHP...
 if /I "%COMPOSER_CMD%"=="composer.phar" (
     "%PHP_CMD%" "%COMPOSER_CMD%" install --no-interaction --prefer-dist --optimize-autoloader
 ) else (
@@ -120,7 +162,7 @@ if /I "%COMPOSER_CMD%"=="composer.phar" (
 if errorlevel 1 goto :fail
 echo.
 
-echo [8/13] Install/update dependency Node.js...
+echo [10/15] Install/update dependency Node.js...
 if exist "package-lock.json" (
     "%NPM_CMD%" install
 ) else (
@@ -129,17 +171,17 @@ if exist "package-lock.json" (
 if errorlevel 1 goto :fail
 echo.
 
-echo [9/13] Menjalankan migrasi database...
+echo [11/15] Menjalankan migrasi database...
 "%PHP_CMD%" artisan migrate --force
 if errorlevel 1 goto :fail
 echo.
 
-echo [10/13] Memastikan symbolic link storage...
+echo [12/15] Memastikan symbolic link storage...
 "%PHP_CMD%" artisan storage:link >nul 2>nul
 echo Storage link dicek.
 echo.
 
-echo [11/13] Membersihkan dan membangun ulang cache Laravel...
+echo [13/15] Membersihkan dan membangun ulang cache Laravel...
 "%PHP_CMD%" artisan optimize:clear
 if errorlevel 1 goto :fail
 "%PHP_CMD%" artisan config:cache
@@ -150,18 +192,22 @@ if errorlevel 1 goto :fail
 if errorlevel 1 goto :fail
 echo.
 
-echo [12/13] Build ulang frontend...
+echo [14/15] Build ulang frontend...
 "%NPM_CMD%" run build
 if errorlevel 1 goto :fail
 echo.
 
-echo [13/13] Menonaktifkan maintenance mode...
+echo [15/15] Menonaktifkan maintenance mode...
 if "%MAINTENANCE_ENABLED%"=="1" (
     "%PHP_CMD%" artisan up
     if errorlevel 1 goto :fail
     echo Maintenance mode dimatikan.
 ) else (
-    echo Maintenance mode sebelumnya tidak aktif.
+    if "!WAS_ALREADY_IN_MAINTENANCE!"=="1" (
+        echo Maintenance mode tetap aktif karena sudah aktif sebelum script dijalankan.
+    ) else (
+        echo Maintenance mode sebelumnya tidak aktif.
+    )
 )
 echo.
 
@@ -170,11 +216,18 @@ echo   UPDATE SELESAI
 echo ==================================================
 echo.
 echo Ringkasan:
-echo - Source code sudah ditarik dari GitHub
+if "!REPO_ALREADY_UP_TO_DATE!"=="1" (
+    echo - Source code sudah sinkron sejak awal ^(tidak ada commit baru di GitHub^)
+) else (
+    echo - Source code sudah ditarik dari GitHub
+)
 echo - Dependency PHP dan Node.js sudah diperbarui
 echo - Migrasi database sudah dijalankan
 echo - Asset frontend sudah dibuild ulang
 echo - Cache Laravel sudah dibangun ulang
+if "!WAS_ALREADY_IN_MAINTENANCE!"=="1" (
+    echo - Maintenance mode tetap aktif dan perlu dimatikan manual dengan: php artisan up
+)
 echo.
 echo Silakan refresh browser di PC client.
 echo.
@@ -189,6 +242,12 @@ for /f "delims=" %%i in ('where %~1') do (
     goto :resolve_done
 )
 :resolve_done
+exit /b 0
+
+:detect_maintenance_mode
+set "WAS_ALREADY_IN_MAINTENANCE=0"
+if exist "storage\framework\down" set "WAS_ALREADY_IN_MAINTENANCE=1"
+if exist "storage\framework\maintenance.php" set "WAS_ALREADY_IN_MAINTENANCE=1"
 exit /b 0
 
 :check_untracked_conflicts
@@ -253,12 +312,17 @@ echo.
 if "%MAINTENANCE_ENABLED%"=="1" (
     echo [INFO] Mencoba menonaktifkan maintenance mode...
     "%PHP_CMD%" artisan up >nul 2>nul
+    if not errorlevel 1 echo [INFO] Maintenance mode berhasil dimatikan kembali.
+)
+if "!WAS_ALREADY_IN_MAINTENANCE!"=="1" (
+    echo [INFO] Maintenance mode sudah aktif sebelum script berjalan, jadi tidak diubah oleh script ini.
 )
 echo ==================================================
 echo   UPDATE GAGAL
 echo ==================================================
 echo.
 echo Periksa pesan error di atas, perbaiki masalahnya, lalu jalankan lagi.
+echo Jika aplikasi masih maintenance, gunakan: php artisan up
 echo.
 pause
 exit /b 1
