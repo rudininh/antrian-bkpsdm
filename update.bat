@@ -9,6 +9,7 @@ set "REMOTE_NAME=origin"
 set "MAINTENANCE_ENABLED=0"
 set "CURRENT_BRANCH="
 set "HAS_LOCAL_CHANGES=0"
+set "HAS_UNTRACKED_CONFLICTS=0"
 
 call :banner
 
@@ -58,13 +59,13 @@ echo [INFO] Composer      : %COMPOSER_CMD%
 echo [INFO] NPM           : %NPM_CMD%
 echo.
 
-echo [1/12] Mengecek branch aktif...
+echo [1/13] Mengecek branch aktif...
 for /f "delims=" %%i in ('"%GIT_CMD%" branch --show-current') do set "CURRENT_BRANCH=%%i"
 if not defined CURRENT_BRANCH set "CURRENT_BRANCH=main"
 echo Branch aktif: %CURRENT_BRANCH%
 echo.
 
-echo [2/12] Mengecek perubahan lokal...
+echo [2/13] Mengecek perubahan lokal...
 for /f "delims=" %%i in ('"%GIT_CMD%" status --porcelain') do (
     set "HAS_LOCAL_CHANGES=1"
 )
@@ -83,12 +84,19 @@ if "!HAS_LOCAL_CHANGES!"=="1" (
     echo.
 )
 
-echo [3/12] Mengambil data terbaru dari GitHub...
+echo [3/13] Mengambil data terbaru dari GitHub...
 "%GIT_CMD%" fetch %REMOTE_NAME%
 if errorlevel 1 goto :fail
 echo.
 
-echo [4/12] Mengaktifkan maintenance mode...
+echo [4/13] Memeriksa konflik file untracked sebelum pull...
+call :check_untracked_conflicts
+if errorlevel 1 goto :fail
+if "!HAS_UNTRACKED_CONFLICTS!"=="1" goto :end
+echo Tidak ada konflik file untracked dengan update dari GitHub.
+echo.
+
+echo [5/13] Mengaktifkan maintenance mode...
 "%PHP_CMD%" artisan down --render="errors::503" --retry=60 >nul 2>nul
 if not errorlevel 1 (
     set "MAINTENANCE_ENABLED=1"
@@ -98,12 +106,12 @@ if not errorlevel 1 (
 )
 echo.
 
-echo [5/12] Menarik update branch %CURRENT_BRANCH%...
+echo [6/13] Menarik update branch %CURRENT_BRANCH%...
 "%GIT_CMD%" pull %REMOTE_NAME% %CURRENT_BRANCH%
 if errorlevel 1 goto :fail
 echo.
 
-echo [6/12] Install/update dependency PHP...
+echo [7/13] Install/update dependency PHP...
 if /I "%COMPOSER_CMD%"=="composer.phar" (
     "%PHP_CMD%" "%COMPOSER_CMD%" install --no-interaction --prefer-dist --optimize-autoloader
 ) else (
@@ -112,7 +120,7 @@ if /I "%COMPOSER_CMD%"=="composer.phar" (
 if errorlevel 1 goto :fail
 echo.
 
-echo [7/12] Install/update dependency Node.js...
+echo [8/13] Install/update dependency Node.js...
 if exist "package-lock.json" (
     "%NPM_CMD%" install
 ) else (
@@ -121,17 +129,17 @@ if exist "package-lock.json" (
 if errorlevel 1 goto :fail
 echo.
 
-echo [8/12] Menjalankan migrasi database...
+echo [9/13] Menjalankan migrasi database...
 "%PHP_CMD%" artisan migrate --force
 if errorlevel 1 goto :fail
 echo.
 
-echo [9/12] Memastikan symbolic link storage...
+echo [10/13] Memastikan symbolic link storage...
 "%PHP_CMD%" artisan storage:link >nul 2>nul
 echo Storage link dicek.
 echo.
 
-echo [10/12] Membersihkan dan membangun ulang cache Laravel...
+echo [11/13] Membersihkan dan membangun ulang cache Laravel...
 "%PHP_CMD%" artisan optimize:clear
 if errorlevel 1 goto :fail
 "%PHP_CMD%" artisan config:cache
@@ -142,12 +150,12 @@ if errorlevel 1 goto :fail
 if errorlevel 1 goto :fail
 echo.
 
-echo [11/12] Build ulang frontend...
+echo [12/13] Build ulang frontend...
 "%NPM_CMD%" run build
 if errorlevel 1 goto :fail
 echo.
 
-echo [12/12] Menonaktifkan maintenance mode...
+echo [13/13] Menonaktifkan maintenance mode...
 if "%MAINTENANCE_ENABLED%"=="1" (
     "%PHP_CMD%" artisan up
     if errorlevel 1 goto :fail
@@ -181,6 +189,56 @@ for /f "delims=" %%i in ('where %~1') do (
     goto :resolve_done
 )
 :resolve_done
+exit /b 0
+
+:check_untracked_conflicts
+set "HAS_UNTRACKED_CONFLICTS=0"
+set "UNTRACKED_TMP=%TEMP%\antrian_untracked_%RANDOM%_%RANDOM%.tmp"
+set "REMOTE_CHANGED_TMP=%TEMP%\antrian_remote_changed_%RANDOM%_%RANDOM%.tmp"
+set "CONFLICT_TMP=%TEMP%\antrian_conflicts_%RANDOM%_%RANDOM%.tmp"
+
+"%GIT_CMD%" ls-files --others --exclude-standard > "!UNTRACKED_TMP!"
+if errorlevel 1 goto :check_untracked_conflicts_fail
+
+"%GIT_CMD%" diff --name-only HEAD..%REMOTE_NAME%/%CURRENT_BRANCH% > "!REMOTE_CHANGED_TMP!"
+if errorlevel 1 goto :check_untracked_conflicts_fail
+
+break > "!CONFLICT_TMP!"
+for /f "usebackq delims=" %%u in ("!UNTRACKED_TMP!") do (
+    findstr /x /c:"%%u" "!REMOTE_CHANGED_TMP!" >nul
+    if not errorlevel 1 (
+        >> "!CONFLICT_TMP!" echo %%u
+        set "HAS_UNTRACKED_CONFLICTS=1"
+    )
+)
+
+if "!HAS_UNTRACKED_CONFLICTS!"=="1" (
+    echo [ERROR] Ditemukan file untracked yang akan tertimpa oleh update dari GitHub.
+    echo.
+    echo File yang bentrok:
+    type "!CONFLICT_TMP!"
+    echo.
+    echo Selesaikan dulu sebelum melanjutkan update. Pilih salah satu langkah berikut:
+    echo 1. Backup atau pindahkan file di atas ke folder lain.
+    echo 2. Jika file memang tidak diperlukan, hapus manual dari folder project.
+    echo 3. Jika file ingin mulai dipantau Git, commit atau stash perubahan yang relevan dari repo yang benar.
+    echo.
+    echo Setelah konflik dibersihkan, jalankan update.bat lagi.
+)
+
+call :cleanup_temp_file "!UNTRACKED_TMP!"
+call :cleanup_temp_file "!REMOTE_CHANGED_TMP!"
+call :cleanup_temp_file "!CONFLICT_TMP!"
+exit /b 0
+
+:check_untracked_conflicts_fail
+call :cleanup_temp_file "!UNTRACKED_TMP!"
+call :cleanup_temp_file "!REMOTE_CHANGED_TMP!"
+call :cleanup_temp_file "!CONFLICT_TMP!"
+exit /b 1
+
+:cleanup_temp_file
+if exist "%~1" del /q "%~1" >nul 2>nul
 exit /b 0
 
 :banner
