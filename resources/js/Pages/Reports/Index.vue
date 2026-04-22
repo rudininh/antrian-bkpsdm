@@ -1,4 +1,5 @@
 <script setup>
+import { appRoute } from '@/utils/route';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
@@ -14,6 +15,7 @@ const props = defineProps({
     },
 });
 
+const route = appRoute;
 const toneClasses = {
     teal: 'bg-teal-50 text-teal-900 border-teal-100',
     emerald: 'bg-emerald-50 text-emerald-900 border-emerald-100',
