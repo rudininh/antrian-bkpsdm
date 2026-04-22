@@ -23,7 +23,7 @@ const navItems = computed(() =>
             ? { name: 'Panggilan', href: route('monitoring.index'), active: route().current('monitoring.*'), hint: 'Live' }
             : null,
         { name: 'Ambil Nomor', href: route('public.queue.index'), active: route().current('public.queue.*') || route().current('public.monitor'), hint: 'Publik' },
-        { name: 'Buku Tamu Kiosk', href: route('public.guest-book.kiosk'), active: route().current('public.guest-book.kiosk*'), hint: 'Publik' },
+        { name: 'Buku Tamu', href: route('public.guest-book.kiosk'), active: route().current('public.guest-book.kiosk*'), hint: 'Publik' },
         { name: 'Profil', href: route('profile.edit'), active: route().current('profile.*'), hint: 'Akun' },
     ].filter(Boolean),
 );
@@ -56,7 +56,7 @@ const navItems = computed(() =>
             <div class="rounded-3xl border border-white/10 bg-white/5 p-5">
                 <p class="text-sm font-medium text-white">Status Sistem</p>
                 <p class="mt-2 text-3xl font-semibold text-teal-300">Online</p>
-                <p class="mt-2 text-sm text-slate-300">Mode satu receptionist aktif dengan satu meja layanan, satu kiosk ambil nomor, dan satu monitor antrian.</p>
+                <p class="mt-2 text-sm text-slate-300">Mode satu receptionist aktif dengan satu meja layanan, satu titik ambil nomor, dan satu monitor antrian.</p>
             </div>
 
             <div class="rounded-3xl border border-white/10 bg-white/5 p-5">
@@ -75,7 +75,7 @@ const navItems = computed(() =>
                         :href="route('public.guest-book.kiosk')"
                         class="inline-flex items-center justify-center rounded-2xl bg-teal-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-400"
                     >
-                        Buka Buku Tamu Kiosk
+                        Buka Buku Tamu
                     </Link>
                     <Link
                         :href="route('logout')"

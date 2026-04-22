@@ -4,10 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\Call;
 use App\Models\Counter;
-use App\Models\Queue;
 use App\Models\Service;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -41,7 +39,7 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
-        $services = collect([
+        collect([
             ['name' => 'Administrasi Kepegawaian', 'code' => 'A', 'description' => 'Kenaikan pangkat, KGB, SK CPNS/PNS/PPPK, perubahan data, dan legalisir dokumen.'],
             ['name' => 'Mutasi dan Penempatan', 'code' => 'B', 'description' => 'Mutasi antar instansi, rotasi jabatan, penempatan awal, dan perpindahan unit kerja.'],
             ['name' => 'Pengembangan Kompetensi', 'code' => 'C', 'description' => 'Diklat, pelatihan, izin belajar, tugas belajar, dan sertifikasi.'],
@@ -64,44 +62,5 @@ class DatabaseSeeder extends Seeder
         );
 
         Call::query()->delete();
-        Queue::query()->delete();
-
-        $today = Carbon::today();
-        $statuses = ['completed', 'completed', 'completed', 'serving', 'called', 'waiting', 'waiting', 'completed'];
-
-        foreach ($services as $serviceIndex => $service) {
-            foreach (range(1, 8) as $number) {
-                $status = $statuses[($serviceIndex + $number - 1) % count($statuses)];
-                $counter = in_array($status, ['completed', 'serving', 'called'], true)
-                    ? $receptionCounter
-                    : null;
-                $queuedAt = $today->copy()->setTime(8, 0)->addMinutes((($serviceIndex * 8) + $number) * 7);
-
-                $queue = Queue::query()->create([
-                    'service_id' => $service->id,
-                    'counter_id' => $counter?->id,
-                    'ticket_number' => sprintf('%s-%03d', $service->code, $number),
-                    'queue_date' => $today->toDateString(),
-                    'status' => $status,
-                    'queued_at' => $queuedAt,
-                    'called_at' => in_array($status, ['completed', 'serving', 'called'], true) ? $queuedAt->copy()->addMinutes(6) : null,
-                    'started_at' => in_array($status, ['completed', 'serving'], true) ? $queuedAt->copy()->addMinutes(8) : null,
-                    'completed_at' => $status === 'completed' ? $queuedAt->copy()->addMinutes(15) : null,
-                    'notes' => $status === 'waiting' ? 'Menunggu giliran pada area tunggu.' : null,
-                ]);
-
-                if ($counter && in_array($status, ['completed', 'serving', 'called'], true)) {
-                    Call::query()->create([
-                        'queue_id' => $queue->id,
-                        'counter_id' => $counter->id,
-                        'status' => $status,
-                        'called_at' => $queue->called_at ?? $queuedAt->copy()->addMinutes(6),
-                        'started_at' => $queue->started_at,
-                        'finished_at' => $queue->completed_at,
-                        'notes' => $status === 'serving' ? 'Sedang diproses operator.' : null,
-                    ]);
-                }
-            }
-        }
     }
 }

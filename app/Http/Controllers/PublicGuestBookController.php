@@ -51,7 +51,7 @@ class PublicGuestBookController extends Controller
                 ],
             ],
             'meta' => [
-                'title' => 'Kiosk Buku Tamu',
+                'title' => 'Buku Tamu',
                 'description' => 'Silakan isi buku tamu dan feedback sesuai nomor antrian yang sedang dipanggil.',
             ],
         ]);

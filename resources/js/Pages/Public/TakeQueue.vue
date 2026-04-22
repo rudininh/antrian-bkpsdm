@@ -33,13 +33,6 @@ const secondaryCalls = computed(() => props.liveCalls.slice(1, 4));
 const selectedService = computed(() => props.services.find((service) => service.code === form.service_code) ?? null);
 const soundEnabled = ref(false);
 const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
-const soundStatusLabel = computed(() => {
-    if (!speechSupported) {
-        return 'Browser tidak mendukung suara';
-    }
-
-    return soundEnabled.value ? 'Suara aktif' : 'Suara belum aktif';
-});
 
 let intervalId = null;
 let spokenCallSignature = null;
@@ -80,7 +73,10 @@ const enableSound = async () => {
 
     await unlockSpeech();
     soundEnabled.value = true;
-    window.localStorage.setItem('public-monitor-sound-enabled', '1');
+};
+
+const enableSoundOnInteraction = () => {
+    void enableSound();
 };
 
 const buildAnnouncementTexts = (call) => {
@@ -145,15 +141,13 @@ const maybeAnnounceLatestCall = (calls) => {
 
 onMounted(() => {
     if (speechSupported) {
-        soundEnabled.value = window.localStorage.getItem('public-monitor-sound-enabled') === '1';
         window.speechSynthesis.getVoices();
         window.speechSynthesis.onvoiceschanged = () => {
             window.speechSynthesis.getVoices();
         };
-
-        if (soundEnabled.value) {
-            enableSound();
-        }
+        void enableSound();
+        window.addEventListener('pointerdown', enableSoundOnInteraction, { passive: true });
+        window.addEventListener('keydown', enableSoundOnInteraction);
     }
 
     intervalId = window.setInterval(() => {
@@ -182,6 +176,8 @@ onBeforeUnmount(() => {
     if (speechSupported) {
         window.speechSynthesis.cancel();
         window.speechSynthesis.onvoiceschanged = null;
+        window.removeEventListener('pointerdown', enableSoundOnInteraction);
+        window.removeEventListener('keydown', enableSoundOnInteraction);
     }
 
     audioContext?.close?.();
@@ -288,21 +284,6 @@ onBeforeUnmount(() => {
         </section>
 
         <aside class="flex min-h-0 flex-col gap-4 xl:self-start">
-            <div class="flex items-center justify-between rounded-[1.5rem] border border-white/70 bg-white/90 px-4 py-3 shadow-[0_20px_60px_-45px_rgba(15,23,42,0.4)]">
-                <div>
-                    <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Status Audio</p>
-                    <p class="mt-1 text-sm font-semibold text-slate-950">{{ soundStatusLabel }}</p>
-                </div>
-                <button
-                    v-if="speechSupported && !soundEnabled"
-                    type="button"
-                    class="rounded-full bg-amber-300 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-200"
-                    @click="enableSound"
-                >
-                    Aktifkan Suara
-                </button>
-            </div>
-
             <div class="flex min-h-0 flex-col rounded-[2rem] border border-white/70 bg-slate-950 p-4 text-white shadow-[0_30px_90px_-50px_rgba(15,23,42,0.8)]">
                 <div class="flex items-start justify-between gap-3">
                     <div>

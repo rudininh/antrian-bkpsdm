@@ -58,7 +58,6 @@ const setRecommend = (value) => {
         <section class="rounded-[2rem] border border-white/70 bg-white/92 p-6 shadow-[0_30px_90px_-50px_rgba(15,23,42,0.55)]">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-teal-700">Buku Tamu & Feedback</p>
                     <h1 class="mt-2 text-2xl font-semibold text-slate-950 sm:text-3xl">Isi data tamu dan pengalaman layanan pada tiket ini.</h1>
                 </div>
                 <div class="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white">
@@ -174,7 +173,7 @@ const setRecommend = (value) => {
                     class="inline-flex w-full items-center justify-center rounded-[1rem] bg-slate-950 px-6 py-4 text-base font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                     :disabled="form.processing"
                 >
-                    {{ form.processing ? 'Menyimpan...' : 'Simpan Buku Tamu + Feedback' }}
+                    {{ form.processing ? 'Menyimpan...' : 'Simpan' }}
                 </button>
             </div>
         </form>

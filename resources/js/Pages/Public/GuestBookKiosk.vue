@@ -174,11 +174,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <Head title="Kiosk Buku Tamu" />
+    <Head title="Buku Tamu" />
 
     <div class="w-full">
         <section class="w-full rounded-[2rem] border border-white/70 bg-white/92 p-6 shadow-[0_30px_90px_-50px_rgba(15,23,42,0.55)]">
-            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-teal-700">Kiosk Buku Tamu</p>
             <h1 class="mt-2 text-2xl font-semibold text-slate-950 sm:text-3xl">{{ meta.title }}</h1>
             <p class="mt-2 text-sm leading-6 text-slate-600">{{ meta.description }}</p>
 
@@ -281,7 +280,7 @@ onBeforeUnmount(() => {
                 </div>
 
                 <button type="submit" class="inline-flex w-full items-center justify-center rounded-[1rem] bg-slate-950 px-6 py-4 text-base font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!activeQueue || form.processing">
-                    {{ form.processing ? 'Menyimpan...' : 'Simpan Buku Tamu + Feedback' }}
+                    {{ form.processing ? 'Menyimpan...' : 'Simpan' }}
                 </button>
             </form>
         </section>
