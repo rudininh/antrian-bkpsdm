@@ -90,6 +90,16 @@ const buildAnnouncementTexts = (call) => {
     ];
 };
 
+const reloadWithFallback = () => {
+    router.reload({
+        only: ['services', 'liveCalls', 'summary'],
+        preserveScroll: true,
+        onError: () => {
+            window.location.reload();
+        },
+    });
+};
+
 const speakCall = (call) => {
     if (!speechSupported || !call || !soundEnabled.value) {
         return;
@@ -151,10 +161,7 @@ onMounted(() => {
     }
 
     intervalId = window.setInterval(() => {
-        router.reload({
-            only: ['services', 'liveCalls', 'summary'],
-            preserveScroll: true,
-        });
+        reloadWithFallback();
     }, 2000);
 
     maybeAnnounceLatestCall(props.liveCalls);

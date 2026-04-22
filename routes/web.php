@@ -6,6 +6,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicGuestBookController;
 use App\Http\Controllers\PublicQueueController;
 use App\Http\Controllers\QueueController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SystemUpdateController;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/pengaturan/update-server/artisan/{action}', [SystemUpdateController::class, 'runArtisanAction'])
             ->whereIn('action', ['down', 'up', 'optimize-clear'])
             ->name('system.update.artisan');
+    });
+
+    Route::middleware('can:manage-reports')->group(function () {
+        Route::get('/laporan', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/laporan/export/excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
+        Route::get('/laporan/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
     });
 
     Route::middleware('can:manage-queues')->group(function () {

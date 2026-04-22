@@ -44,6 +44,9 @@ const mobileNavItems = computed(() =>
         permissions.value.manageSystem
             ? { name: 'Pengaturan', href: route('system.update.index'), active: route().current('system.update.*') }
             : null,
+        permissions.value.manageReports
+            ? { name: 'Laporan', href: route('reports.index'), active: route().current('reports.*') }
+            : null,
         { name: 'Profil', href: route('profile.edit'), active: route().current('profile.*') },
     ].filter(Boolean),
 );

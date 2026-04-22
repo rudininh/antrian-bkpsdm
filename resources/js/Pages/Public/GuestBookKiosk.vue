@@ -129,6 +129,17 @@ const hydrateFormFromQueue = (queue) => {
     consultantSearch.value = '';
 };
 
+const reloadWithFallback = () => {
+    router.reload({
+        only: ['activeQueue', 'meta'],
+        preserveScroll: true,
+        preserveState: true,
+        onError: () => {
+            window.location.reload();
+        },
+    });
+};
+
 const submit = () => {
     form.transform((data) => ({
         ...data,
@@ -157,13 +168,7 @@ watch(
 );
 
 onMounted(() => {
-    intervalId = window.setInterval(() => {
-        router.reload({
-            only: ['activeQueue', 'meta'],
-            preserveScroll: true,
-            preserveState: true,
-        });
-    }, 3000);
+    intervalId = window.setInterval(reloadWithFallback, 3000);
 });
 
 onBeforeUnmount(() => {

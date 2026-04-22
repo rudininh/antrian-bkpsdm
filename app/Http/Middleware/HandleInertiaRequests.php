@@ -40,6 +40,7 @@ class HandleInertiaRequests extends Middleware
                 'manageMasterData' => $request->user()?->can('manage-master-data') ?? false,
                 'manageQueues' => $request->user()?->can('manage-queues') ?? false,
                 'manageSystem' => $request->user()?->can('manage-system') ?? false,
+                'manageReports' => $request->user()?->can('manage-reports') ?? false,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

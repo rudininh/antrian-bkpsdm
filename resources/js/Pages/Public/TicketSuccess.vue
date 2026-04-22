@@ -28,6 +28,16 @@ const redirectLabel = computed(() => `${countdown.value} detik`);
 let timeoutId = null;
 let intervalId = null;
 
+const reloadWithFallback = () => {
+    router.reload({
+        only: ['liveCalls', 'summary'],
+        preserveScroll: true,
+        onError: () => {
+            window.location.reload();
+        },
+    });
+};
+
 onMounted(() => {
     intervalId = window.setInterval(() => {
         if (countdown.value > 1) {
@@ -35,13 +45,10 @@ onMounted(() => {
         }
     }, 1000);
 
-    router.reload({
-        only: ['liveCalls', 'summary'],
-        preserveScroll: true,
-    });
+    reloadWithFallback();
 
     timeoutId = window.setTimeout(() => {
-        router.visit(page.props.urls.publicQueueIndex);
+        window.location.assign(page.props.urls.publicQueueIndex);
     }, 15000);
 });
 

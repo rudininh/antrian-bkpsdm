@@ -25,6 +25,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage-master-data', fn (User $user) => $user->isAdmin());
         Gate::define('manage-queues', fn (User $user) => $user->isAdmin() || $user->isOperator());
         Gate::define('manage-system', fn (User $user) => $user->isAdmin() || $user->isOperator());
+        Gate::define('manage-reports', fn (User $user) => $user->isAdmin() || $user->isOperator());
 
         Vite::prefetch(concurrency: 3);
     }
