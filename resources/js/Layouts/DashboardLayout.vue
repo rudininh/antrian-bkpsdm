@@ -1,7 +1,8 @@
 <script setup>
+import { appRoute } from '@/utils/route';
 import DashboardHeader from '@/Components/dashboard/DashboardHeader.vue';
 import DashboardSidebar from '@/Components/dashboard/DashboardSidebar.vue';
-import { usePage } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 const props = defineProps({
@@ -20,12 +21,32 @@ const props = defineProps({
 });
 
 const page = usePage();
+const route = appRoute;
 const meta = computed(() => page.props.meta ?? {});
+const permissions = computed(() => page.props.permissions ?? {});
 const resolvedTitle = computed(() => props.title || meta.value.title || 'Dashboard');
 const resolvedDescription = computed(
     () => props.description || meta.value.description || 'Ringkasan operasional layanan hari ini.',
 );
 const resolvedDateLabel = computed(() => props.dateLabel || meta.value.dateLabel || '');
+const mobileNavItems = computed(() =>
+    [
+        { name: 'Dashboard', href: route('dashboard'), active: route().current('dashboard') },
+        permissions.value.manageMasterData
+            ? { name: 'Layanan', href: route('services.index'), active: route().current('services.*') }
+            : null,
+        permissions.value.manageQueues
+            ? { name: 'Antrian', href: route('queues.index'), active: route().current('queues.*') }
+            : null,
+        permissions.value.manageQueues
+            ? { name: 'Panggilan', href: route('monitoring.index'), active: route().current('monitoring.*') }
+            : null,
+        permissions.value.manageSystem
+            ? { name: 'Pengaturan', href: route('system.update.index'), active: route().current('system.update.*') }
+            : null,
+        { name: 'Profil', href: route('profile.edit'), active: route().current('profile.*') },
+    ].filter(Boolean),
+);
 </script>
 
 <template>
@@ -39,6 +60,18 @@ const resolvedDateLabel = computed(() => props.dateLabel || meta.value.dateLabel
                     :description="resolvedDescription"
                     :date-label="resolvedDateLabel"
                 />
+
+                <nav class="mt-4 flex gap-3 overflow-x-auto pb-2 lg:hidden">
+                    <Link
+                        v-for="item in mobileNavItems"
+                        :key="item.name"
+                        :href="item.href"
+                        class="shrink-0 rounded-2xl px-4 py-2 text-sm font-semibold transition"
+                        :class="item.active ? 'bg-slate-950 text-white' : 'border border-white/70 bg-white/85 text-slate-700 shadow-[var(--shadow-panel)]'"
+                    >
+                        {{ item.name }}
+                    </Link>
+                </nav>
 
                 <main class="mt-6">
                     <slot />

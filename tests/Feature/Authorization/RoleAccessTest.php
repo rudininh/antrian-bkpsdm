@@ -62,4 +62,15 @@ class RoleAccessTest extends TestCase
             ->get(route('monitoring.index'))
             ->assertOk();
     }
+
+    public function test_operator_can_access_system_update_page(): void
+    {
+        $operator = User::factory()->create([
+            'role' => 'operator',
+        ]);
+
+        $this->actingAs($operator)
+            ->get(route('system.update.index'))
+            ->assertOk();
+    }
 }

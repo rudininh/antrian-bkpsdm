@@ -14,6 +14,17 @@ set "HAS_UNTRACKED_CONFLICTS=0"
 set "REPO_ALREADY_UP_TO_DATE=0"
 set "LOCAL_HEAD="
 set "REMOTE_HEAD="
+set "NON_INTERACTIVE=0"
+
+:parse_args
+if "%~1"=="" goto :args_done
+if /I "%~1"=="--non-interactive" (
+    set "NON_INTERACTIVE=1"
+)
+shift
+goto :parse_args
+
+:args_done
 
 call :banner
 
@@ -80,6 +91,11 @@ if "!HAS_LOCAL_CHANGES!"=="1" (
     echo.
     "%GIT_CMD%" status --short
     echo.
+    if "!NON_INTERACTIVE!"=="1" (
+        echo [ERROR] Mode non-interaktif menghentikan update untuk mencegah prompt yang menggantung.
+        echo Commit, stash, atau bersihkan perubahan lokal sebelum menjalankan update dari panel admin.
+        goto :fail
+    )
     set /p "CONTINUE_UPDATE=Lanjutkan update juga? ^(Y/N^): "
     if /I not "!CONTINUE_UPDATE!"=="Y" (
         echo Update dibatalkan oleh pengguna.
@@ -231,7 +247,7 @@ if "!WAS_ALREADY_IN_MAINTENANCE!"=="1" (
 echo.
 echo Silakan refresh browser di PC client.
 echo.
-pause
+call :maybe_pause
 goto :eof
 
 :resolve_command
@@ -324,10 +340,15 @@ echo.
 echo Periksa pesan error di atas, perbaiki masalahnya, lalu jalankan lagi.
 echo Jika aplikasi masih maintenance, gunakan: php artisan up
 echo.
-pause
+call :maybe_pause
 exit /b 1
 
 :end
 echo.
+call :maybe_pause
+exit /b 0
+
+:maybe_pause
+if "%NON_INTERACTIVE%"=="1" exit /b 0
 pause
 exit /b 0

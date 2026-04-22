@@ -22,6 +22,9 @@ const navItems = computed(() =>
         permissions.value.manageQueues
             ? { name: 'Panggilan', href: route('monitoring.index'), active: route().current('monitoring.*'), hint: 'Live' }
             : null,
+        permissions.value.manageSystem
+            ? { name: 'Pengaturan', href: route('system.update.index'), active: route().current('system.update.*'), hint: 'Server' }
+            : null,
         { name: 'Ambil Nomor', href: route('public.queue.index'), active: route().current('public.queue.*') || route().current('public.monitor'), hint: 'Publik' },
         { name: 'Buku Tamu', href: route('public.guest-book.kiosk'), active: route().current('public.guest-book.kiosk*'), hint: 'Publik' },
         { name: 'Profil', href: route('profile.edit'), active: route().current('profile.*'), hint: 'Akun' },

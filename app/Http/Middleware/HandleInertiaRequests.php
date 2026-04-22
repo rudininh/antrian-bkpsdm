@@ -39,9 +39,11 @@ class HandleInertiaRequests extends Middleware
             'permissions' => [
                 'manageMasterData' => $request->user()?->can('manage-master-data') ?? false,
                 'manageQueues' => $request->user()?->can('manage-queues') ?? false,
+                'manageSystem' => $request->user()?->can('manage-system') ?? false,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
             ],
             'urls' => [
                 'home' => Route::has('home') ? route('home') : '/',

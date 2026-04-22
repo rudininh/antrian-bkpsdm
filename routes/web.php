@@ -7,6 +7,7 @@ use App\Http\Controllers\PublicGuestBookController;
 use App\Http\Controllers\PublicQueueController;
 use App\Http\Controllers\QueueController;
 use App\Http\Controllers\ServiceController;
+use App\Http\Controllers\SystemUpdateController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PublicQueueController::class, 'index'])->name('home');
@@ -33,6 +34,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/layanan', [ServiceController::class, 'store'])->name('services.store');
         Route::put('/layanan/{service}', [ServiceController::class, 'update'])->name('services.update');
         Route::delete('/layanan/{service}', [ServiceController::class, 'destroy'])->name('services.destroy');
+    });
+
+    Route::middleware('can:manage-system')->group(function () {
+        Route::get('/pengaturan/update-server', [SystemUpdateController::class, 'index'])->name('system.update.index');
+        Route::post('/pengaturan/update-server/run', [SystemUpdateController::class, 'runUpdate'])->name('system.update.run');
+        Route::post('/pengaturan/update-server/artisan/{action}', [SystemUpdateController::class, 'runArtisanAction'])
+            ->whereIn('action', ['down', 'up', 'optimize-clear'])
+            ->name('system.update.artisan');
     });
 
     Route::middleware('can:manage-queues')->group(function () {
