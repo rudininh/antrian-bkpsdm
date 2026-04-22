@@ -43,6 +43,20 @@ const resolvedDateLabel = computed(() => props.dateLabel || meta.value.dateLabel
                 <main class="mt-6">
                     <slot />
                 </main>
+
+                <footer class="mt-8 rounded-[1.5rem] border border-white/70 bg-white/85 px-5 py-4 text-sm text-slate-600 shadow-[0_20px_60px_-45px_rgba(15,23,42,0.45)] sm:px-6">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <p>&copy; BKPSDM Kota Banjarmasin 2026. All rights reserved.</p>
+                        <a
+                            href="https://github.com/rudininh/antrian-bkpsdm"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="font-semibold text-teal-700 transition hover:text-teal-600"
+                        >
+                            Open Source: github.com/rudininh/antrian-bkpsdm
+                        </a>
+                    </div>
+                </footer>
             </div>
         </div>
     </div>

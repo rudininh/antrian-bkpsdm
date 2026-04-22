@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Queue extends Model
@@ -48,5 +49,10 @@ class Queue extends Model
     public function calls(): HasMany
     {
         return $this->hasMany(Call::class);
+    }
+
+    public function guestBook(): HasOne
+    {
+        return $this->hasOne(GuestBook::class);
     }
 }

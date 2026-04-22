@@ -23,7 +23,7 @@ defineProps({
 });
 
 const page = usePage();
-const countdown = ref(5);
+const countdown = ref(15);
 const redirectLabel = computed(() => `${countdown.value} detik`);
 let timeoutId = null;
 let intervalId = null;
@@ -42,7 +42,7 @@ onMounted(() => {
 
     timeoutId = window.setTimeout(() => {
         router.visit(page.props.urls.publicQueueIndex);
-    }, 5000);
+    }, 15000);
 });
 
 onBeforeUnmount(() => {

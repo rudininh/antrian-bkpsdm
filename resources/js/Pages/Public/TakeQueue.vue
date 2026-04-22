@@ -218,15 +218,12 @@ onBeforeUnmount(() => {
                         <p class="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">Ambil Nomor</p>
                         <h2 class="mt-1 text-xl font-semibold text-slate-950">Pilih kelompok layanan lalu terbitkan nomor otomatis.</h2>
                     </div>
-                    <p class="max-w-md text-sm leading-6 text-slate-500">
-                        Daftar layanan dibuat ringkas di halaman utama, lalu pilihan lengkap dibuka lewat satu popup.
-                    </p>
                 </div>
 
                 <form class="mt-4 flex min-h-0 flex-1 flex-col gap-4" @submit.prevent="submit">
                     <div class="rounded-[1.8rem] border border-slate-200 bg-[linear-gradient(145deg,_rgba(255,255,255,0.94),_rgba(240,253,250,0.98))] p-5 shadow-[0_24px_70px_-50px_rgba(15,23,42,0.5)]">
-                        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                            <div class="max-w-2xl">
+                        <div class="flex flex-col gap-4">
+                            <div>
                                 <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Pilihan Layanan</p>
                                 <template v-if="selectedService">
                                     <div class="mt-3 flex items-center gap-3">
@@ -256,7 +253,7 @@ onBeforeUnmount(() => {
 
                             <button
                                 type="button"
-                                class="inline-flex items-center justify-center rounded-full border border-teal-300 bg-teal-50 px-5 py-3 text-sm font-semibold text-teal-800 transition hover:bg-teal-100"
+                                class="inline-flex w-full items-center justify-center rounded-[1rem] border border-slate-950 bg-white px-6 py-4 text-base font-semibold text-slate-950 transition hover:bg-slate-50"
                                 @click="servicePickerOpen = true"
                             >
                                 {{ selectedService ? 'Ubah Layanan' : 'Pilih Layanan' }}
@@ -277,11 +274,10 @@ onBeforeUnmount(() => {
 
                     <p v-if="form.errors.service_code" class="text-sm font-medium text-rose-600">{{ form.errors.service_code }}</p>
 
-                    <div class="flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
-                        <span class="text-sm text-slate-500">Tiket dibuat untuk tanggal operasional hari ini.</span>
+                    <div class="border-t border-slate-100 pt-3">
                         <button
                             type="submit"
-                            class="inline-flex items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            class="inline-flex w-full items-center justify-center rounded-[1rem] bg-slate-950 px-6 py-4 text-base font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                             :disabled="form.processing || !form.service_code"
                         >
                             {{ form.processing ? 'Memproses...' : 'Ambil Nomor Sekarang' }}
@@ -311,7 +307,6 @@ onBeforeUnmount(() => {
                 <div class="flex items-start justify-between gap-3">
                     <div>
                         <p class="text-sm font-semibold uppercase tracking-[0.24em] text-teal-300">Monitor Publik</p>
-                        <h3 class="mt-1 text-base font-semibold">Panggilan aktif ditampilkan besar agar mudah terlihat tamu.</h3>
                     </div>
                     <div class="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-teal-200">
                         Live

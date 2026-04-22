@@ -22,7 +22,7 @@ class PublicQueueController extends Controller
         return Inertia::render('Public/TakeQueue', [
             'publicPage' => [
                 'title' => 'Ambil Nomor Antrian',
-                'subtitle' => 'Ambil nomor dan pantau panggilan aktif dari satu layar yang sama. Tombol login petugas tetap tersedia di bagian atas.',
+                'subtitle' => '',
             ],
             'services' => $this->servicesForPublic($today),
             'liveCalls' => $this->liveCalls($today),

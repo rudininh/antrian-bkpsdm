@@ -49,6 +49,7 @@ class HandleInertiaRequests extends Middleware
                 'dashboard' => Route::has('dashboard') ? route('dashboard') : '/dashboard',
                 'publicQueueIndex' => Route::has('public.queue.index') ? route('public.queue.index') : '/ambil-antrian',
                 'publicQueueStore' => Route::has('public.queue.store') ? route('public.queue.store') : '/ambil-antrian',
+                'publicGuestBookKiosk' => Route::has('public.guest-book.kiosk') ? route('public.guest-book.kiosk') : '/buku-tamu',
                 'publicMonitor' => Route::has('public.monitor') ? route('public.monitor') : '/monitor-publik',
                 'logoKotaBanjarmasin' => rtrim($request->root(), '/').'/images/logo-kota-banjarmasin.png',
             ],

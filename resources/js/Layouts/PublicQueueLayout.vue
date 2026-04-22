@@ -21,9 +21,6 @@ const publicPage = computed(() => page.props.publicPage ?? {});
                         <h2 class="mt-2 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
                             Badan Kepegawaian dan Pengembangan Sumber Daya Manusia Kota Banjarmasin
                         </h2>
-                        <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">
-                            Layanan antrian publik BKPSDM Kota Banjarmasin untuk memudahkan tamu memilih layanan, mengambil nomor, dan memantau panggilan secara langsung.
-                        </p>
                     </div>
                 </div>
             </section>
@@ -35,16 +32,10 @@ const publicPage = computed(() => page.props.publicPage ?? {});
                             Antrian BKPSDM
                         </Link>
                         <h1 class="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">{{ publicPage.title }}</h1>
-                        <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">{{ publicPage.subtitle }}</p>
+                        <p v-if="publicPage.subtitle" class="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">{{ publicPage.subtitle }}</p>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-3">
-                        <Link
-                            :href="urls.publicQueueIndex"
-                            class="rounded-full border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-800 transition hover:bg-teal-100"
-                        >
-                            Ambil Nomor
-                        </Link>
                         <Link
                             v-if="user"
                             :href="urls.dashboard"
@@ -66,6 +57,20 @@ const publicPage = computed(() => page.props.publicPage ?? {});
             <main class="mt-6">
                 <slot />
             </main>
+
+            <footer class="mt-8 rounded-[1.5rem] border border-white/70 bg-white/85 px-5 py-4 text-sm text-slate-600 shadow-[0_20px_60px_-45px_rgba(15,23,42,0.45)] sm:px-6">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p>&copy; BKPSDM Kota Banjarmasin 2026. All rights reserved.</p>
+                    <a
+                        href="https://github.com/rudininh/antrian-bkpsdm"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="font-semibold text-teal-700 transition hover:text-teal-600"
+                    >
+                        Open Source: github.com/rudininh/antrian-bkpsdm
+                    </a>
+                </div>
+            </footer>
         </div>
     </div>
 </template>

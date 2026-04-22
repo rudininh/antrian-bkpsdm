@@ -23,6 +23,7 @@ const navItems = computed(() =>
             ? { name: 'Panggilan', href: route('monitoring.index'), active: route().current('monitoring.*'), hint: 'Live' }
             : null,
         { name: 'Ambil Nomor', href: route('public.queue.index'), active: route().current('public.queue.*') || route().current('public.monitor'), hint: 'Publik' },
+        { name: 'Buku Tamu Kiosk', href: route('public.guest-book.kiosk'), active: route().current('public.guest-book.kiosk*'), hint: 'Publik' },
         { name: 'Profil', href: route('profile.edit'), active: route().current('profile.*'), hint: 'Akun' },
     ].filter(Boolean),
 );
@@ -69,6 +70,12 @@ const navItems = computed(() =>
                         class="inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
                     >
                         Buka Ambil Nomor
+                    </Link>
+                    <Link
+                        :href="route('public.guest-book.kiosk')"
+                        class="inline-flex items-center justify-center rounded-2xl bg-teal-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-400"
+                    >
+                        Buka Buku Tamu Kiosk
                     </Link>
                     <Link
                         :href="route('logout')"

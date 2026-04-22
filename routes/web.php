@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicGuestBookController;
 use App\Http\Controllers\PublicQueueController;
 use App\Http\Controllers\QueueController;
 use App\Http\Controllers\ServiceController;
@@ -12,6 +13,10 @@ Route::get('/', [PublicQueueController::class, 'index'])->name('home');
 Route::get('/ambil-antrian', [PublicQueueController::class, 'index'])->name('public.queue.index');
 Route::post('/ambil-antrian', [PublicQueueController::class, 'store'])->name('public.queue.store');
 Route::get('/ambil-antrian/sukses/{queue}', [PublicQueueController::class, 'success'])->name('public.queue.success');
+Route::get('/buku-tamu', [PublicGuestBookController::class, 'kiosk'])->name('public.guest-book.kiosk');
+Route::post('/buku-tamu', [PublicGuestBookController::class, 'upsertFromKiosk'])->name('public.guest-book.kiosk.store');
+Route::get('/ambil-antrian/buku-tamu/{queue}', [PublicGuestBookController::class, 'show'])->name('public.guest-book.show');
+Route::put('/ambil-antrian/buku-tamu/{queue}', [PublicGuestBookController::class, 'upsert'])->name('public.guest-book.upsert');
 Route::get('/monitor-publik', [PublicQueueController::class, 'monitor'])->name('public.monitor');
 
 Route::get('/dashboard', DashboardController::class)
