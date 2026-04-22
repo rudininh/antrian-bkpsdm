@@ -69,13 +69,13 @@ for /f "delims=" %%i in ('"%GIT_CMD%" status --porcelain') do (
     set "HAS_LOCAL_CHANGES=1"
 )
 
-if "%HAS_LOCAL_CHANGES%"=="1" (
+if "!HAS_LOCAL_CHANGES!"=="1" (
     echo [WARNING] Ada perubahan lokal yang belum di-commit.
     echo Update otomatis bisa gagal jika file yang sama ikut berubah di GitHub.
     echo.
     "%GIT_CMD%" status --short
     echo.
-    set /p CONTINUE_UPDATE=Lanjutkan update juga? (Y/N): 
+    set /p "CONTINUE_UPDATE=Lanjutkan update juga? ^(Y/N^): "
     if /I not "!CONTINUE_UPDATE!"=="Y" (
         echo Update dibatalkan oleh pengguna.
         goto :end
