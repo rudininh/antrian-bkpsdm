@@ -13,6 +13,8 @@ use Inertia\Response;
 
 class SystemUpdateController extends Controller
 {
+    protected const STALE_LOCK_MINUTES = 180;
+
     protected ?array $staleLockNotice = null;
 
     public function index(): Response
@@ -300,7 +302,7 @@ class SystemUpdateController extends Controller
             return null;
         }
 
-        if ($this->shouldReleaseStaleLock()) {
+        if ($this->shouldReleaseStaleLock($lockPath)) {
             $this->releaseStaleLock($lockPath);
 
             return null;
@@ -318,11 +320,26 @@ class SystemUpdateController extends Controller
         return $decoded;
     }
 
-    protected function shouldReleaseStaleLock(): bool
+    protected function shouldReleaseStaleLock(string $lockPath): bool
     {
+        if ($this->isLockTooOld($lockPath)) {
+            return true;
+        }
+
         $isRunning = $this->isUpdateProcessRunning();
 
         return $isRunning === false;
+    }
+
+    protected function isLockTooOld(string $lockPath): bool
+    {
+        if (! File::exists($lockPath)) {
+            return false;
+        }
+
+        $modifiedAt = Carbon::createFromTimestamp(File::lastModified($lockPath));
+
+        return $modifiedAt->lt(now()->subMinutes(self::STALE_LOCK_MINUTES));
     }
 
     protected function isUpdateProcessRunning(): ?bool
@@ -335,7 +352,7 @@ class SystemUpdateController extends Controller
         $script = <<<'POWERSHELL'
 $project = '%s'
 $process = Get-CimInstance Win32_Process | Where-Object {
-    $_.CommandLine -and $_.CommandLine -like "*$project*" -and (
+    $_.ProcessId -ne $PID -and $_.CommandLine -and $_.CommandLine -like "*$project*" -and (
         $_.CommandLine -like '*update.bat*' -or $_.CommandLine -like '*update-runner.cmd*'
     )
 } | Select-Object -First 1
