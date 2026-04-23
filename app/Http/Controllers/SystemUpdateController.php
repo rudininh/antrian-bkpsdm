@@ -35,6 +35,8 @@ class SystemUpdateController extends Controller
         $localHead = $this->runCommand(['git', 'rev-parse', 'HEAD'], $projectPath)['output'];
         $remoteHead = $this->runCommand(['git', 'rev-parse', sprintf('origin/%s', $branch)], $projectPath)['output'];
         $statusShort = $this->runCommand(['git', 'status', '--short'], $projectPath)['output'];
+        $blockingStatusShort = $this->filterBlockingGitStatus($statusShort);
+        $ignoredStatusShort = $this->filterIgnoredGitStatus($statusShort);
         $statusFull = $this->runCommand(['git', 'status'], $projectPath)['output'];
         $lastCommit = $this->runCommand(['git', 'log', '-1', '--pretty=format:%h - %s (%ci)'], $projectPath)['output'];
         $remoteUrl = $this->runCommand(['git', 'remote', 'get-url', 'origin'], $projectPath)['output'];
@@ -58,9 +60,11 @@ class SystemUpdateController extends Controller
                 'branch' => $branch,
                 'localHead' => $localHead,
                 'remoteHead' => $remoteHead,
-                'hasLocalChanges' => $statusShort !== '',
+                'hasLocalChanges' => $blockingStatusShort !== '',
+                'hasIgnoredLocalChanges' => $ignoredStatusShort !== '',
                 'isUpToDate' => $localHead !== '' && $localHead === $remoteHead,
-                'statusShort' => $statusShort,
+                'statusShort' => $blockingStatusShort,
+                'ignoredStatusShort' => $ignoredStatusShort,
                 'statusFull' => $statusFull,
                 'lastCommit' => $lastCommit,
                 'remoteUrl' => $remoteUrl,
@@ -77,7 +81,7 @@ class SystemUpdateController extends Controller
                 ],
                 [
                     'label' => 'git status --short',
-                    'output' => $statusShort !== '' ? $statusShort : 'Working tree clean',
+                    'output' => $blockingStatusShort !== '' ? $blockingStatusShort : 'Working tree clean',
                 ],
             ],
             'updateLog' => [
@@ -108,12 +112,13 @@ class SystemUpdateController extends Controller
         }
 
         $statusResult = $this->runCommand(['git', 'status', '--porcelain'], base_path());
+        $blockingStatus = $this->filterBlockingGitStatus($statusResult['output']);
 
         if (! $statusResult['successful']) {
             return back()->with('error', 'Gagal memeriksa status repository sebelum update: '.$statusResult['output']);
         }
 
-        if ($statusResult['output'] !== '') {
+        if ($blockingStatus !== '') {
             return back()->with('error', 'Update dari panel admin hanya bisa dijalankan saat working tree Git bersih. Commit, stash, atau buang perubahan lokal dulu.');
         }
 
@@ -308,5 +313,24 @@ class SystemUpdateController extends Controller
         fclose($handle);
 
         return ltrim($content);
+    }
+
+    protected function filterBlockingGitStatus(string $statusOutput): string
+    {
+        return collect(preg_split('/\r\n|\r|\n/', trim($statusOutput)) ?: [])
+            ->filter(fn (string $line) => $line !== '' && ! $this->isIgnoredStatusLine($line))
+            ->implode(PHP_EOL);
+    }
+
+    protected function filterIgnoredGitStatus(string $statusOutput): string
+    {
+        return collect(preg_split('/\r\n|\r|\n/', trim($statusOutput)) ?: [])
+            ->filter(fn (string $line) => $line !== '' && $this->isIgnoredStatusLine($line))
+            ->implode(PHP_EOL);
+    }
+
+    protected function isIgnoredStatusLine(string $line): bool
+    {
+        return str_contains($line, 'package-lock.json');
     }
 }

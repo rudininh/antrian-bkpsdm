@@ -10,6 +10,7 @@ set "MAINTENANCE_ENABLED=0"
 set "WAS_ALREADY_IN_MAINTENANCE=0"
 set "CURRENT_BRANCH="
 set "HAS_LOCAL_CHANGES=0"
+set "HAS_IGNORED_LOCAL_CHANGES=0"
 set "HAS_UNTRACKED_CONFLICTS=0"
 set "REPO_ALREADY_UP_TO_DATE=0"
 set "LOCAL_HEAD="
@@ -104,15 +105,25 @@ echo Branch aktif: %CURRENT_BRANCH%
 echo.
 
 echo [2/15] Mengecek perubahan lokal...
-for /f "delims=" %%i in ('"%GIT_CMD%" status --porcelain') do (
+set "STATUS_RAW_TMP=%TEMP%\antrian_status_raw_%RANDOM%_%RANDOM%.tmp"
+set "STATUS_FILTERED_TMP=%TEMP%\antrian_status_filtered_%RANDOM%_%RANDOM%.tmp"
+set "STATUS_IGNORED_TMP=%TEMP%\antrian_status_ignored_%RANDOM%_%RANDOM%.tmp"
+"%GIT_CMD%" status --porcelain > "!STATUS_RAW_TMP!"
+if errorlevel 1 goto :fail
+findstr /v /i /c:"package-lock.json" "!STATUS_RAW_TMP!" > "!STATUS_FILTERED_TMP!"
+findstr /i /c:"package-lock.json" "!STATUS_RAW_TMP!" > "!STATUS_IGNORED_TMP!"
+for /f "delims=" %%i in ('type "!STATUS_FILTERED_TMP!"') do (
     set "HAS_LOCAL_CHANGES=1"
+)
+for /f "delims=" %%i in ('type "!STATUS_IGNORED_TMP!"') do (
+    set "HAS_IGNORED_LOCAL_CHANGES=1"
 )
 
 if "!HAS_LOCAL_CHANGES!"=="1" (
     echo [WARNING] Ada perubahan lokal yang belum di-commit.
     echo Update otomatis bisa gagal jika file yang sama ikut berubah di GitHub.
     echo.
-    "%GIT_CMD%" status --short
+    type "!STATUS_FILTERED_TMP!"
     echo.
     if "!DISCARD_LOCAL_CHANGES!"=="1" (
         call :discard_local_changes
@@ -162,7 +173,17 @@ if "!HAS_LOCAL_CHANGES!"=="1" (
             goto :end
         )
     )
+    echo.
 )
+
+if "!HAS_LOCAL_CHANGES!"=="0" if "!HAS_IGNORED_LOCAL_CHANGES!"=="1" (
+    echo [INFO] Ditemukan perubahan package-lock.json saja, tetapi file itu diabaikan agar update tetap bisa berjalan.
+    echo.
+)
+
+call :cleanup_temp_file "!STATUS_RAW_TMP!"
+call :cleanup_temp_file "!STATUS_FILTERED_TMP!"
+call :cleanup_temp_file "!STATUS_IGNORED_TMP!"
 
 echo [3/15] Mengecek status maintenance mode...
 call :detect_maintenance_mode

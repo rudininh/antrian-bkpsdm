@@ -23,6 +23,7 @@ const flashWarning = computed(() => page.props.flash?.warning);
 const isRunning = computed(() => props.systemStatus?.isRunning ?? false);
 const maintenanceMode = computed(() => props.systemStatus?.maintenanceMode ?? false);
 const hasLocalChanges = computed(() => props.gitStatus?.hasLocalChanges ?? false);
+const hasIgnoredLocalChanges = computed(() => props.gitStatus?.hasIgnoredLocalChanges ?? false);
 const gitClean = computed(() => !props.gitStatus?.statusShort);
 const canRunUpdate = computed(() => !isRunning.value && props.systemStatus?.updateBatExists && gitClean.value);
 
@@ -205,6 +206,9 @@ watch(pollWatcher, (running) => {
                         </span>
                     </div>
                     <pre class="mt-4 overflow-x-auto whitespace-pre-wrap break-words text-sm leading-6 text-slate-200">{{ gitStatus.statusShort || 'Working tree clean' }}</pre>
+                    <p v-if="hasIgnoredLocalChanges && gitClean" class="mt-3 text-xs text-slate-400">
+                        package-lock.json diabaikan sebagai perubahan generatif, jadi update tetap bisa jalan.
+                    </p>
                 </div>
             </article>
 

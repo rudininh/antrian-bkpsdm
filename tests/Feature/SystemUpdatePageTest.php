@@ -79,6 +79,39 @@ class SystemUpdatePageTest extends TestCase
             );
     }
 
+    public function test_package_lock_changes_do_not_block_update_page(): void
+    {
+        Process::fake(function ($process) {
+            $command = $process->command;
+
+            return match ($command) {
+                ['git', 'branch', '--show-current'] => Process::result('main'),
+                ['git', 'fetch', 'origin', '--quiet'] => Process::result('Remote ref updated.'),
+                ['git', 'rev-parse', 'HEAD'] => Process::result('abc123'),
+                ['git', 'rev-parse', 'origin/main'] => Process::result('abc123'),
+                ['git', 'status', '--short'] => Process::result(" M package-lock.json"),
+                ['git', 'status'] => Process::result('On branch main'),
+                ['git', 'log', '-1', '--pretty=format:%h - %s (%ci)'] => Process::result('abc123 - Test commit (2026-04-22 08:00:00 +0800)'),
+                ['git', 'remote', 'get-url', 'origin'] => Process::result('https://example.com/repo.git'),
+                default => Process::result(''),
+            };
+        });
+
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('system.update.index'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('gitStatus.hasLocalChanges', false)
+                ->where('gitStatus.hasIgnoredLocalChanges', true)
+                ->where('gitStatus.statusShort', '')
+                ->where('gitStatus.ignoredStatusShort', " M package-lock.json")
+            );
+    }
+
     public function test_run_update_is_blocked_when_repository_has_local_changes(): void
     {
         Process::fake(function ($process) {
