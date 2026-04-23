@@ -14,6 +14,7 @@ use Inertia\Response;
 class SystemUpdateController extends Controller
 {
     protected const STALE_LOCK_MINUTES = 180;
+    protected const RUNNER_COMPLETE_MARKER = 'update-runner.done';
 
     protected ?array $staleLockNotice = null;
 
@@ -111,6 +112,8 @@ class SystemUpdateController extends Controller
         }
 
         $lockPath = $this->lockPath();
+        $completionPath = $this->runnerCompletionPath();
+        $runnerPath = $this->runnerScriptPath();
 
         if ($this->readLockData() !== null) {
             return back()->with('error', 'Update masih berjalan. Tunggu proses sebelumnya selesai.');
@@ -127,6 +130,7 @@ class SystemUpdateController extends Controller
             return back()->with('error', 'Update ditolak karena working tree Git belum bersih. Perubahan terdeteksi: '.$this->formatBlockingStatusPreview($blockingStatus).' Bersihkan dari panel ini atau commit/stash dulu sebelum update.');
         }
 
+        File::delete($completionPath, $runnerPath);
         File::ensureDirectoryExists(dirname($lockPath));
 
         File::put($lockPath, json_encode([
@@ -143,9 +147,7 @@ class SystemUpdateController extends Controller
             .'=================================================='.PHP_EOL
         );
 
-        $runnerPath = $this->runnerScriptPath();
-
-        File::put($runnerPath, $this->buildRunnerScript($updatePath, $logPath, $lockPath));
+        File::put($runnerPath, $this->buildRunnerScript($updatePath, $logPath, $lockPath, $completionPath));
 
         $escapedRunnerPath = str_replace("'", "''", $runnerPath);
         $launchCommand = "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c','call `\"`\"{$escapedRunnerPath}`\"`\"' -WindowStyle Hidden";
@@ -162,8 +164,7 @@ class SystemUpdateController extends Controller
             ]);
 
         if (! $launchResult->successful()) {
-            File::delete($lockPath);
-            File::delete($runnerPath);
+            File::delete($lockPath, $runnerPath, $completionPath);
 
             return back()->with('error', 'Gagal menjalankan update.bat dari panel admin: '.trim($launchResult->errorOutput()));
         }
@@ -289,6 +290,11 @@ class SystemUpdateController extends Controller
         return storage_path('app/update-running.lock');
     }
 
+    protected function runnerCompletionPath(): string
+    {
+        return storage_path('app/'.self::RUNNER_COMPLETE_MARKER);
+    }
+
     protected function runnerScriptPath(): string
     {
         return storage_path('app/update-runner.cmd');
@@ -299,6 +305,12 @@ class SystemUpdateController extends Controller
         $lockPath = $this->lockPath();
 
         if (! File::exists($lockPath)) {
+            return null;
+        }
+
+        if ($this->hasRunnerCompleted()) {
+            $this->releaseCompletedLock($lockPath);
+
             return null;
         }
 
@@ -322,13 +334,7 @@ class SystemUpdateController extends Controller
 
     protected function shouldReleaseStaleLock(string $lockPath): bool
     {
-        if ($this->isLockTooOld($lockPath)) {
-            return true;
-        }
-
-        $isRunning = $this->isUpdateProcessRunning();
-
-        return $isRunning === false;
+        return $this->isLockTooOld($lockPath);
     }
 
     protected function isLockTooOld(string $lockPath): bool
@@ -342,49 +348,21 @@ class SystemUpdateController extends Controller
         return $modifiedAt->lt(now()->subMinutes(self::STALE_LOCK_MINUTES));
     }
 
-    protected function isUpdateProcessRunning(): ?bool
+    protected function hasRunnerCompleted(): bool
     {
-        if (PHP_OS_FAMILY !== 'Windows') {
-            return null;
-        }
+        return File::exists($this->runnerCompletionPath());
+    }
 
-        $projectPath = str_replace("'", "''", base_path());
-        $script = <<<'POWERSHELL'
-$project = '%s'
-$process = Get-CimInstance Win32_Process | Where-Object {
-    $_.ProcessId -ne $PID -and $_.CommandLine -and $_.CommandLine -like "*$project*" -and (
-        $_.CommandLine -like '*update.bat*' -or $_.CommandLine -like '*update-runner.cmd*'
-    )
-} | Select-Object -First 1
-
-if ($null -ne $process) {
-    $process.ProcessId
-}
-POWERSHELL;
-
-        $result = Process::timeout(10)->run([
-            'powershell',
-            '-NoProfile',
-            '-NonInteractive',
-            '-ExecutionPolicy',
-            'Bypass',
-            '-Command',
-            sprintf($script, $projectPath),
-        ]);
-
-        if (! $result->successful()) {
-            return null;
-        }
-
-        return trim($result->output()) !== '';
+    protected function releaseCompletedLock(string $lockPath): void
+    {
+        File::delete($lockPath, $this->runnerScriptPath(), $this->runnerCompletionPath());
     }
 
     protected function releaseStaleLock(string $lockPath): void
     {
         $previousLockData = $this->parseLockData($lockPath);
 
-        File::delete($lockPath);
-        File::delete($this->runnerScriptPath());
+        File::delete($lockPath, $this->runnerScriptPath(), $this->runnerCompletionPath());
 
         $this->staleLockNotice = [
             'released_at' => now()->toDateTimeString(),
@@ -439,7 +417,7 @@ POWERSHELL;
         return $preview !== '' ? $preview : 'perubahan lokal tidak dapat diringkas';
     }
 
-    protected function buildRunnerScript(string $updatePath, string $logPath, string $lockPath): string
+    protected function buildRunnerScript(string $updatePath, string $logPath, string $lockPath, string $completionPath): string
     {
         $projectPath = base_path();
 
@@ -449,6 +427,7 @@ POWERSHELL;
             'cd /d "'.$projectPath.'"',
             'call "'.$updatePath.'" --non-interactive >> "'.$logPath.'" 2>&1',
             'set "EXIT_CODE=!ERRORLEVEL!"',
+            'type nul > "'.$completionPath.'"',
             'if exist "'.$lockPath.'" del /q "'.$lockPath.'"',
             '>> "'.$logPath.'" echo.',
             '>> "'.$logPath.'" echo [INFO] Runner panel selesai dengan exit code !EXIT_CODE!.',
