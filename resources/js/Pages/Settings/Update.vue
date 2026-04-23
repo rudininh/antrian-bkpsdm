@@ -19,8 +19,10 @@ const page = usePage();
 
 const flashSuccess = computed(() => page.props.flash?.success);
 const flashError = computed(() => page.props.flash?.error);
+const flashWarning = computed(() => page.props.flash?.warning);
 const isRunning = computed(() => props.systemStatus?.isRunning ?? false);
 const maintenanceMode = computed(() => props.systemStatus?.maintenanceMode ?? false);
+const hasLocalChanges = computed(() => props.gitStatus?.hasLocalChanges ?? false);
 const gitClean = computed(() => !props.gitStatus?.statusShort);
 const canRunUpdate = computed(() => !isRunning.value && props.systemStatus?.updateBatExists && gitClean.value);
 
@@ -59,6 +61,19 @@ const runUpdate = () => {
 
     router.post(route('system.update.run'), {}, {
         preserveScroll: true,
+    });
+};
+
+const runCleanupAction = (mode, confirmation) => {
+    if (confirmation && !window.confirm(confirmation)) {
+        return;
+    }
+
+    router.post(route('system.update.cleanup', mode), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            reloadStatus();
+        },
     });
 };
 
@@ -113,6 +128,13 @@ watch(pollWatcher, (running) => {
             class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700"
         >
             {{ flashError }}
+        </div>
+
+        <div
+            v-if="flashWarning"
+            class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800"
+        >
+            {{ flashWarning }}
         </div>
 
         <section class="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
@@ -226,6 +248,41 @@ watch(pollWatcher, (running) => {
                         <p v-if="!gitClean" class="text-sm text-amber-700">
                             Tombol update dinonaktifkan sementara karena repository masih punya perubahan lokal.
                         </p>
+
+                        <div class="rounded-3xl border border-amber-100 bg-amber-50/70 p-4">
+                            <p class="text-sm font-semibold text-amber-900">Bersihkan repository lokal</p>
+                            <p class="mt-1 text-sm text-amber-800">
+                                Gunakan ini kalau ingin menghapus perubahan lokal dulu supaya tombol update bisa langsung dipakai.
+                                Hati-hati, aksi hapus file untracked bisa menghilangkan file lokal yang belum masuk Git.
+                            </p>
+
+                            <div class="mt-4 grid gap-3 lg:grid-cols-3">
+                                <button
+                                    type="button"
+                                    class="rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm font-semibold text-amber-900 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                    :disabled="isRunning || !hasLocalChanges"
+                                    @click="runCleanupAction('restore-tracked', 'Balikkan semua perubahan file tracked ke commit terakhir? Perubahan pada file yang sudah ter-track akan hilang.')"
+                                >
+                                    Balikkan tracked
+                                </button>
+                                <button
+                                    type="button"
+                                    class="rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm font-semibold text-rose-800 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                    :disabled="isRunning || !hasLocalChanges"
+                                    @click="runCleanupAction('clean-untracked', 'Hapus semua file untracked yang tidak di-ignore? Pastikan file lokal penting, termasuk file konfigurasi, sudah aman.')"
+                                >
+                                    Hapus untracked
+                                </button>
+                                <button
+                                    type="button"
+                                    class="rounded-2xl border border-sky-200 bg-white px-4 py-3 text-sm font-semibold text-sky-800 transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                    :disabled="isRunning || !hasLocalChanges"
+                                    @click="runCleanupAction('all', 'Balikkan perubahan tracked lalu hapus untracked? Pastikan semua file lokal yang penting sudah dibackup terlebih dahulu.')"
+                                >
+                                    Bersihkan semua
+                                </button>
+                            </div>
+                        </div>
 
                         <div class="grid gap-3 sm:grid-cols-3">
                             <button

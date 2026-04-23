@@ -98,4 +98,46 @@ class SystemUpdatePageTest extends TestCase
             ->assertRedirect(route('system.update.index'))
             ->assertSessionHas('error', 'Update dari panel admin hanya bisa dijalankan saat working tree Git bersih. Commit, stash, atau buang perubahan lokal dulu.');
     }
+
+    public function test_admin_can_restore_tracked_changes_from_update_page(): void
+    {
+        Process::fake(function ($process) {
+            return match ($process->command) {
+                ['git', 'reset', '--hard', 'HEAD'] => Process::result('HEAD is now at abc123'),
+                ['git', 'status', '--short'] => Process::result(''),
+                default => Process::result(''),
+            };
+        });
+
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $this->actingAs($admin)
+            ->from(route('system.update.index'))
+            ->post(route('system.update.cleanup', 'restore-tracked'))
+            ->assertRedirect(route('system.update.index'))
+            ->assertSessionHas('success', 'Repository berhasil dibersihkan. Working tree sekarang sudah clean dan update bisa dijalankan.');
+    }
+
+    public function test_admin_can_remove_untracked_files_from_update_page(): void
+    {
+        Process::fake(function ($process) {
+            return match ($process->command) {
+                ['git', 'clean', '-fd'] => Process::result('Removing temp.txt'),
+                ['git', 'status', '--short'] => Process::result(''),
+                default => Process::result(''),
+            };
+        });
+
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $this->actingAs($admin)
+            ->from(route('system.update.index'))
+            ->post(route('system.update.cleanup', 'clean-untracked'))
+            ->assertRedirect(route('system.update.index'))
+            ->assertSessionHas('success', 'Repository berhasil dibersihkan. Working tree sekarang sudah clean dan update bisa dijalankan.');
+    }
 }

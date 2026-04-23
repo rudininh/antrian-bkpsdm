@@ -8,6 +8,7 @@ use App\Models\Service;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -65,18 +66,22 @@ class QueueController extends Controller
             ? $this->resolveReceptionCounter()
             : null;
 
-        Queue::query()->create([
-            'service_id' => $service->id,
-            'counter_id' => $counter?->id,
-            'ticket_number' => $data['ticket_number'] ?: $this->generateTicketNumber($service, $queuedAt),
-            'queue_date' => $queuedAt->toDateString(),
-            'status' => $data['status'],
-            'queued_at' => $queuedAt,
-            'called_at' => in_array($data['status'], ['called', 'serving', 'completed'], true) ? $queuedAt : null,
-            'started_at' => in_array($data['status'], ['serving', 'completed'], true) ? $queuedAt : null,
-            'completed_at' => $data['status'] === 'completed' ? $queuedAt : null,
-            'notes' => $data['notes'] ?? null,
-        ]);
+        DB::transaction(function () use ($service, $counter, $data, $queuedAt) {
+            Service::query()->whereKey($service->id)->lockForUpdate()->first();
+
+            Queue::query()->create([
+                'service_id' => $service->id,
+                'counter_id' => $counter?->id,
+                'ticket_number' => $data['ticket_number'] ?: $this->generateTicketNumber($service, $queuedAt),
+                'queue_date' => $queuedAt->toDateString(),
+                'status' => $data['status'],
+                'queued_at' => $queuedAt,
+                'called_at' => in_array($data['status'], ['called', 'serving', 'completed'], true) ? $queuedAt : null,
+                'started_at' => in_array($data['status'], ['serving', 'completed'], true) ? $queuedAt : null,
+                'completed_at' => $data['status'] === 'completed' ? $queuedAt : null,
+                'notes' => $data['notes'] ?? null,
+            ]);
+        });
 
         return back()->with('success', 'Antrian berhasil ditambahkan.');
     }
@@ -115,9 +120,18 @@ class QueueController extends Controller
 
     protected function validateQueue(Request $request, ?Queue $queue = null): array
     {
+        $queuedAt = $request->input('queued_at');
+
         return $request->validate([
             'service_id' => ['required', 'exists:services,id'],
-            'ticket_number' => ['nullable', 'string', 'max:50', Rule::unique('queues', 'ticket_number')->ignore($queue?->id)],
+            'ticket_number' => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('queues', 'ticket_number')
+                    ->where(fn ($query) => $query->whereDate('queue_date', $queuedAt))
+                    ->ignore($queue?->id),
+            ],
             'status' => ['required', 'in:waiting,called,serving,completed,skipped,cancelled'],
             'queued_at' => ['required', 'date'],
             'notes' => ['nullable', 'string'],
@@ -126,12 +140,16 @@ class QueueController extends Controller
 
     protected function generateTicketNumber(Service $service, Carbon $queuedAt): string
     {
-        $count = Queue::query()
+        $maxSequence = Queue::query()
             ->where('service_id', $service->id)
             ->whereDate('queue_date', $queuedAt->toDateString())
-            ->count() + 1;
+            ->where('ticket_number', 'like', strtoupper($service->code).'-%')
+            ->selectRaw("MAX(CAST(SUBSTRING_INDEX(ticket_number, '-', -1) AS UNSIGNED)) as max_sequence")
+            ->value('max_sequence');
 
-        return sprintf('%s-%03d', strtoupper($service->code), $count);
+        $nextSequence = ((int) $maxSequence) + 1;
+
+        return sprintf('%s-%03d', strtoupper($service->code), $nextSequence);
     }
 
     protected function shouldAssignReceptionCounter(string $status): bool

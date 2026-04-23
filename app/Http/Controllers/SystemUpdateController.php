@@ -151,6 +151,63 @@ class SystemUpdateController extends Controller
         return back()->with('success', 'Update server dimulai. Halaman akan menampilkan log terbaru secara otomatis.');
     }
 
+    public function cleanWorkingTree(Request $request, string $mode): RedirectResponse
+    {
+        Gate::authorize('manage-system');
+
+        $lockPath = $this->lockPath();
+
+        if (File::exists($lockPath)) {
+            return back()->with('error', 'Pembersihan repository tidak bisa dijalankan saat update masih berjalan.');
+        }
+
+        $actions = [
+            'restore-tracked' => [
+                'title' => 'balikkan perubahan tracked',
+                'commands' => [
+                    ['git', 'reset', '--hard', 'HEAD'],
+                ],
+            ],
+            'clean-untracked' => [
+                'title' => 'hapus file untracked',
+                'commands' => [
+                    ['git', 'clean', '-fd'],
+                ],
+            ],
+            'all' => [
+                'title' => 'bersihkan semua perubahan lokal',
+                'commands' => [
+                    ['git', 'reset', '--hard', 'HEAD'],
+                    ['git', 'clean', '-fd'],
+                ],
+            ],
+        ];
+
+        if (! array_key_exists($mode, $actions)) {
+            return back()->with('error', 'Aksi pembersihan repository tidak dikenali.');
+        }
+
+        foreach ($actions[$mode]['commands'] as $command) {
+            $result = $this->runCommand($command, base_path(), 120);
+
+            if (! $result['successful']) {
+                return back()->with('error', 'Gagal '.$actions[$mode]['title'].': '.$result['output']);
+            }
+        }
+
+        $statusResult = $this->runCommand(['git', 'status', '--short'], base_path());
+
+        if (! $statusResult['successful']) {
+            return back()->with('success', 'Perintah pembersihan repository selesai. Status repo tidak dapat diverifikasi ulang.');
+        }
+
+        if ($statusResult['output'] !== '') {
+            return back()->with('warning', 'Perintah pembersihan selesai, tetapi masih ada perubahan lokal tersisa: '.$statusResult['output']);
+        }
+
+        return back()->with('success', 'Repository berhasil dibersihkan. Working tree sekarang sudah clean dan update bisa dijalankan.');
+    }
+
     public function runArtisanAction(Request $request, string $action): RedirectResponse
     {
         Gate::authorize('manage-system');

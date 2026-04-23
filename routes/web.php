@@ -40,6 +40,9 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:manage-system')->group(function () {
         Route::get('/pengaturan/update-server', [SystemUpdateController::class, 'index'])->name('system.update.index');
         Route::post('/pengaturan/update-server/run', [SystemUpdateController::class, 'runUpdate'])->name('system.update.run');
+        Route::post('/pengaturan/update-server/cleanup/{mode}', [SystemUpdateController::class, 'cleanWorkingTree'])
+            ->whereIn('mode', ['restore-tracked', 'clean-untracked', 'all'])
+            ->name('system.update.cleanup');
         Route::post('/pengaturan/update-server/artisan/{action}', [SystemUpdateController::class, 'runArtisanAction'])
             ->whereIn('action', ['down', 'up', 'optimize-clear'])
             ->name('system.update.artisan');

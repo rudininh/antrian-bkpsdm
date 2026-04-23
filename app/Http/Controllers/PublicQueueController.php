@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -38,15 +39,20 @@ class PublicQueueController extends Controller
 
         $service = $this->resolvePublicServiceByCode($data['service_code']);
 
-        $queuedAt = now();
+        $queue = DB::transaction(function () use ($service) {
+            $queuedAt = now();
 
-        $queue = Queue::query()->create([
-            'service_id' => $service->id,
-            'ticket_number' => $this->generateTicketNumber($service, $queuedAt),
-            'queue_date' => $queuedAt->toDateString(),
-            'status' => 'waiting',
-            'queued_at' => $queuedAt,
-        ]);
+            // Lock the service row so concurrent requests for the same service serialize cleanly.
+            Service::query()->whereKey($service->id)->lockForUpdate()->first();
+
+            return Queue::query()->create([
+                'service_id' => $service->id,
+                'ticket_number' => $this->generateTicketNumber($service, $queuedAt),
+                'queue_date' => $queuedAt->toDateString(),
+                'status' => 'waiting',
+                'queued_at' => $queuedAt,
+            ]);
+        });
 
         return to_route('public.queue.success', $queue);
     }
@@ -160,12 +166,16 @@ class PublicQueueController extends Controller
 
     protected function generateTicketNumber(Service $service, Carbon $queuedAt): string
     {
-        $count = Queue::query()
+        $maxSequence = Queue::query()
             ->where('service_id', $service->id)
             ->whereDate('queue_date', $queuedAt->toDateString())
-            ->count() + 1;
+            ->where('ticket_number', 'like', strtoupper($service->code).'-%')
+            ->selectRaw("MAX(CAST(SUBSTRING_INDEX(ticket_number, '-', -1) AS UNSIGNED)) as max_sequence")
+            ->value('max_sequence');
 
-        return sprintf('%s-%03d', strtoupper($service->code), $count);
+        $nextSequence = ((int) $maxSequence) + 1;
+
+        return sprintf('%s-%03d', strtoupper($service->code), $nextSequence);
     }
 
     protected function resolvePublicServiceByCode(string $code): Service
