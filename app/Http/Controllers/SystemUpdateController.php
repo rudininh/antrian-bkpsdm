@@ -149,24 +149,20 @@ class SystemUpdateController extends Controller
 
         File::put($runnerPath, $this->buildRunnerScript($updatePath, $logPath, $lockPath, $completionPath));
 
-        $escapedRunnerPath = str_replace("'", "''", $runnerPath);
-        $launchCommand = "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c','call `\"`\"{$escapedRunnerPath}`\"`\"' -WindowStyle Hidden";
-        $launchResult = Process::path(base_path())
-            ->timeout(15)
-            ->run([
-                'powershell',
-                '-NoProfile',
-                '-NonInteractive',
-                '-ExecutionPolicy',
-                'Bypass',
-                '-Command',
-                $launchCommand,
-            ]);
-
-        if (! $launchResult->successful()) {
+        try {
+            Process::path(base_path())
+                ->quietly()
+                ->start([
+                    'cmd.exe',
+                    '/d',
+                    '/s',
+                    '/c',
+                    $runnerPath,
+                ]);
+        } catch (\Throwable $e) {
             File::delete($lockPath, $runnerPath, $completionPath);
 
-            return back()->with('error', 'Gagal menjalankan update.bat dari panel admin: '.trim($launchResult->errorOutput()));
+            return back()->with('error', 'Gagal menjalankan update.bat dari panel admin: '.$e->getMessage());
         }
 
         return back()->with('success', 'Update server dimulai. Halaman akan menampilkan log terbaru secara otomatis.');
@@ -425,12 +421,13 @@ class SystemUpdateController extends Controller
             '@echo off',
             'setlocal EnableExtensions EnableDelayedExpansion',
             'cd /d "'.$projectPath.'"',
+            '>> "'.$logPath.'" echo [INFO] Runner panel dimulai pada %DATE% %TIME%.',
             'call "'.$updatePath.'" --non-interactive >> "'.$logPath.'" 2>&1',
             'set "EXIT_CODE=!ERRORLEVEL!"',
+            '>> "'.$logPath.'" echo.',
+            '>> "'.$logPath.'" echo [INFO] Runner panel selesai dengan exit code !EXIT_CODE! pada %DATE% %TIME%.',
             'type nul > "'.$completionPath.'"',
             'if exist "'.$lockPath.'" del /q "'.$lockPath.'"',
-            '>> "'.$logPath.'" echo.',
-            '>> "'.$logPath.'" echo [INFO] Runner panel selesai dengan exit code !EXIT_CODE!.',
             'del /q "%~f0" >nul 2>nul',
             'exit /b !EXIT_CODE!',
             '',
