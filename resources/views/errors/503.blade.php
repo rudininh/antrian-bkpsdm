@@ -216,7 +216,7 @@
                     <h1>Aplikasi sedang maintenance.</h1>
                     <p>
                         Tim sedang melakukan pembaruan atau layanan server masih dipersiapkan.
-                        Halaman ini akan mencoba memuat ulang otomatis setiap <strong>2 detik</strong>
+                        Halaman ini akan mencoba memuat ulang otomatis setiap <strong>15 detik</strong>
                         sampai aplikasi siap digunakan kembali.
                     </p>
                 </div>
@@ -248,7 +248,7 @@
     <script>
         window.setTimeout(function () {
             window.location.reload();
-        }, 2000);
+        }, 15000);
     </script>
 </body>
 </html>
