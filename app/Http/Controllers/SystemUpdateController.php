@@ -13,6 +13,8 @@ use Inertia\Response;
 
 class SystemUpdateController extends Controller
 {
+    protected ?array $staleLockNotice = null;
+
     public function index(): Response
     {
         Gate::authorize('manage-system');
@@ -52,6 +54,7 @@ class SystemUpdateController extends Controller
                 'maintenanceMode' => $this->isMaintenanceMode(),
                 'isRunning' => $isRunning,
                 'lock' => $lockData,
+                'staleLockNotice' => $this->staleLockNotice,
                 'logPath' => $logPath,
                 'logExists' => $logExists,
                 'logUpdatedAt' => $logExists ? Carbon::createFromTimestamp(File::lastModified($logPath))->toDateTimeString() : null,
@@ -107,7 +110,7 @@ class SystemUpdateController extends Controller
 
         $lockPath = $this->lockPath();
 
-        if (File::exists($lockPath)) {
+        if ($this->readLockData() !== null) {
             return back()->with('error', 'Update masih berjalan. Tunggu proses sebelumnya selesai.');
         }
 
@@ -119,7 +122,7 @@ class SystemUpdateController extends Controller
         }
 
         if ($blockingStatus !== '') {
-            return back()->with('error', 'Update dari panel admin hanya bisa dijalankan saat working tree Git bersih. Commit, stash, atau buang perubahan lokal dulu.');
+            return back()->with('error', 'Update ditolak karena working tree Git belum bersih. Perubahan terdeteksi: '.$this->formatBlockingStatusPreview($blockingStatus).' Bersihkan dari panel ini atau commit/stash dulu sebelum update.');
         }
 
         File::ensureDirectoryExists(dirname($lockPath));
@@ -138,20 +141,30 @@ class SystemUpdateController extends Controller
             .'=================================================='.PHP_EOL
         );
 
-        $bat = escapeshellarg($updatePath);
-        $log = escapeshellarg($logPath);
-        $lock = escapeshellarg($lockPath);
-        $command = 'cmd /c start "" /B cmd /c "'.$bat.' --non-interactive >> '.$log.' 2>&1 & if exist '.$lock.' del /q '.$lock.'"';
+        $runnerPath = $this->runnerScriptPath();
 
-        $process = @popen($command, 'r');
+        File::put($runnerPath, $this->buildRunnerScript($updatePath, $logPath, $lockPath));
 
-        if ($process === false) {
+        $escapedRunnerPath = str_replace("'", "''", $runnerPath);
+        $launchCommand = "Start-Process -FilePath 'cmd.exe' -ArgumentList '/c','call `\"`\"{$escapedRunnerPath}`\"`\"' -WindowStyle Hidden";
+        $launchResult = Process::path(base_path())
+            ->timeout(15)
+            ->run([
+                'powershell',
+                '-NoProfile',
+                '-NonInteractive',
+                '-ExecutionPolicy',
+                'Bypass',
+                '-Command',
+                $launchCommand,
+            ]);
+
+        if (! $launchResult->successful()) {
             File::delete($lockPath);
+            File::delete($runnerPath);
 
-            return back()->with('error', 'Gagal menjalankan update.bat dari panel admin.');
+            return back()->with('error', 'Gagal menjalankan update.bat dari panel admin: '.trim($launchResult->errorOutput()));
         }
-
-        @pclose($process);
 
         return back()->with('success', 'Update server dimulai. Halaman akan menampilkan log terbaru secara otomatis.');
     }
@@ -160,9 +173,7 @@ class SystemUpdateController extends Controller
     {
         Gate::authorize('manage-system');
 
-        $lockPath = $this->lockPath();
-
-        if (File::exists($lockPath)) {
+        if ($this->readLockData() !== null) {
             return back()->with('error', 'Pembersihan repository tidak bisa dijalankan saat update masih berjalan.');
         }
 
@@ -216,6 +227,8 @@ class SystemUpdateController extends Controller
     public function runArtisanAction(Request $request, string $action): RedirectResponse
     {
         Gate::authorize('manage-system');
+
+        $this->readLockData();
 
         $commands = [
             'down' => ['artisan', 'down', '--render=errors::503', '--retry=60'],
@@ -274,11 +287,22 @@ class SystemUpdateController extends Controller
         return storage_path('app/update-running.lock');
     }
 
+    protected function runnerScriptPath(): string
+    {
+        return storage_path('app/update-runner.cmd');
+    }
+
     protected function readLockData(): ?array
     {
         $lockPath = $this->lockPath();
 
         if (! File::exists($lockPath)) {
+            return null;
+        }
+
+        if ($this->shouldReleaseStaleLock()) {
+            $this->releaseStaleLock($lockPath);
+
             return null;
         }
 
@@ -292,6 +316,129 @@ class SystemUpdateController extends Controller
         }
 
         return $decoded;
+    }
+
+    protected function shouldReleaseStaleLock(): bool
+    {
+        $isRunning = $this->isUpdateProcessRunning();
+
+        return $isRunning === false;
+    }
+
+    protected function isUpdateProcessRunning(): ?bool
+    {
+        if (PHP_OS_FAMILY !== 'Windows') {
+            return null;
+        }
+
+        $projectPath = str_replace("'", "''", base_path());
+        $script = <<<'POWERSHELL'
+$project = '%s'
+$process = Get-CimInstance Win32_Process | Where-Object {
+    $_.CommandLine -and $_.CommandLine -like "*$project*" -and (
+        $_.CommandLine -like '*update.bat*' -or $_.CommandLine -like '*update-runner.cmd*'
+    )
+} | Select-Object -First 1
+
+if ($null -ne $process) {
+    $process.ProcessId
+}
+POWERSHELL;
+
+        $result = Process::timeout(10)->run([
+            'powershell',
+            '-NoProfile',
+            '-NonInteractive',
+            '-ExecutionPolicy',
+            'Bypass',
+            '-Command',
+            sprintf($script, $projectPath),
+        ]);
+
+        if (! $result->successful()) {
+            return null;
+        }
+
+        return trim($result->output()) !== '';
+    }
+
+    protected function releaseStaleLock(string $lockPath): void
+    {
+        $previousLockData = $this->parseLockData($lockPath);
+
+        File::delete($lockPath);
+        File::delete($this->runnerScriptPath());
+
+        $this->staleLockNotice = [
+            'released_at' => now()->toDateTimeString(),
+            'started_at' => $previousLockData['started_at'] ?? null,
+            'started_by' => $previousLockData['started_by'] ?? 'Tidak diketahui',
+        ];
+
+        $logPath = storage_path('logs/update-runner.log');
+
+        if (! File::exists($logPath)) {
+            return;
+        }
+
+        File::append(
+            $logPath,
+            PHP_EOL.'['.now()->toDateTimeString().'] Lock update dibersihkan otomatis karena proses update sudah tidak terdeteksi.'.PHP_EOL
+        );
+    }
+
+    protected function parseLockData(string $lockPath): array
+    {
+        if (! File::exists($lockPath)) {
+            return [];
+        }
+
+        $decoded = json_decode(File::get($lockPath), true);
+
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        return [
+            'started_at' => Carbon::createFromTimestamp(File::lastModified($lockPath))->toDateTimeString(),
+            'started_by' => 'Tidak diketahui',
+        ];
+    }
+
+    protected function formatBlockingStatusPreview(string $blockingStatus, int $maxLines = 3): string
+    {
+        $lines = collect(preg_split('/\r\n|\r|\n/', trim($blockingStatus)) ?: [])
+            ->filter(fn (string $line) => $line !== '')
+            ->take($maxLines)
+            ->values();
+
+        $preview = $lines->implode(' | ');
+        $remaining = max(0, count(preg_split('/\r\n|\r|\n/', trim($blockingStatus)) ?: []) - $lines->count());
+
+        if ($remaining > 0) {
+            $preview .= " | +{$remaining} lainnya";
+        }
+
+        return $preview !== '' ? $preview : 'perubahan lokal tidak dapat diringkas';
+    }
+
+    protected function buildRunnerScript(string $updatePath, string $logPath, string $lockPath): string
+    {
+        $projectPath = base_path();
+
+        return implode("\r\n", [
+            '@echo off',
+            'setlocal EnableExtensions EnableDelayedExpansion',
+            'cd /d "'.$projectPath.'"',
+            'call "'.$updatePath.'" --non-interactive >> "'.$logPath.'" 2>&1',
+            'set "EXIT_CODE=!ERRORLEVEL!"',
+            'if exist "'.$lockPath.'" del /q "'.$lockPath.'"',
+            '>> "'.$logPath.'" echo.',
+            '>> "'.$logPath.'" echo [INFO] Runner panel selesai dengan exit code !EXIT_CODE!.',
+            'del /q "%~f0" >nul 2>nul',
+            'exit /b !EXIT_CODE!',
+            '',
+        ]);
     }
 
     protected function tailFile(string $path, int $maxBytes = 24000): string

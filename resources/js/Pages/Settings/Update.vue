@@ -26,6 +26,7 @@ const hasLocalChanges = computed(() => props.gitStatus?.hasLocalChanges ?? false
 const hasIgnoredLocalChanges = computed(() => props.gitStatus?.hasIgnoredLocalChanges ?? false);
 const gitClean = computed(() => !props.gitStatus?.statusShort);
 const canRunUpdate = computed(() => !isRunning.value && props.systemStatus?.updateBatExists && gitClean.value);
+const staleLockNotice = computed(() => props.systemStatus?.staleLockNotice ?? null);
 
 let pollTimer = null;
 
@@ -56,7 +57,7 @@ const stopPolling = () => {
 };
 
 const runUpdate = () => {
-    if (!window.confirm('Jalankan update.bat di server sekarang? Aplikasi bisa masuk maintenance mode sementara.')) {
+    if (!window.confirm('Jalankan update.bat di server sekarang? Aplikasi mungkin masuk mode maintenance untuk sementara.')) {
         return;
     }
 
@@ -138,12 +139,20 @@ watch(pollWatcher, (running) => {
             {{ flashWarning }}
         </div>
 
+        <div
+            v-if="staleLockNotice"
+            class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-medium text-sky-800"
+        >
+            Lock update lama dibersihkan otomatis pada {{ staleLockNotice.released_at }}.
+            Proses sebelumnya tercatat mulai {{ staleLockNotice.started_at || '-' }} oleh {{ staleLockNotice.started_by || 'Tidak diketahui' }}.
+        </div>
+
         <section class="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
             <article class="min-w-0 rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[var(--shadow-panel)]">
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <h3 class="text-lg font-semibold text-slate-900">Status Repository</h3>
-                        <p class="mt-1 text-sm text-slate-500">Pantau branch aktif, commit saat ini, dan kondisi sinkronisasi server.</p>
+                        <p class="mt-1 text-sm text-slate-500">Pantau branch aktif, commit saat ini, dan status sinkronisasi server.</p>
                     </div>
 
                     <button
@@ -151,13 +160,13 @@ watch(pollWatcher, (running) => {
                         class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                         @click="reloadStatus"
                     >
-                        Refresh Status
+                        Muat Ulang Status
                     </button>
                 </div>
 
                 <div class="mt-6 grid gap-4 md:grid-cols-2">
                     <div class="rounded-3xl bg-slate-50 p-5">
-                        <p class="text-xs uppercase tracking-[0.25em] text-slate-500">Branch</p>
+                        <p class="text-xs uppercase tracking-[0.25em] text-slate-500">Cabang</p>
                         <p class="mt-3 text-2xl font-semibold text-slate-900">{{ gitStatus.branch }}</p>
                         <p class="mt-2 break-all text-sm text-slate-500">{{ gitStatus.remoteUrl }}</p>
                     </div>
@@ -165,7 +174,7 @@ watch(pollWatcher, (running) => {
                     <div class="rounded-3xl p-5" :class="gitStatus.isUpToDate ? 'bg-emerald-50' : 'bg-amber-50'">
                         <p class="text-xs uppercase tracking-[0.25em]" :class="gitStatus.isUpToDate ? 'text-emerald-600' : 'text-amber-700'">Sinkronisasi</p>
                         <p class="mt-3 text-2xl font-semibold" :class="gitStatus.isUpToDate ? 'text-emerald-800' : 'text-amber-800'">
-                            {{ gitStatus.isUpToDate ? 'Already up to date' : 'Ada update baru' }}
+                            {{ gitStatus.isUpToDate ? 'Sudah sinkron' : 'Ada pembaruan baru' }}
                         </p>
                         <p class="mt-2 text-sm" :class="gitStatus.isUpToDate ? 'text-emerald-700' : 'text-amber-700'">
                             {{ gitStatus.fetch.output }}
@@ -195,19 +204,19 @@ watch(pollWatcher, (running) => {
                         <div>
                             <p class="text-xs uppercase tracking-[0.25em] text-slate-400">git status</p>
                             <p class="mt-1 text-sm text-slate-400">
-                                {{ gitClean ? 'Working tree clean' : 'Ada perubahan lokal yang perlu diperhatikan.' }}
+                                {{ gitClean ? 'Repositori lokal bersih.' : 'Ada perubahan lokal yang perlu diperhatikan.' }}
                             </p>
                         </div>
                         <span
                             class="rounded-full px-3 py-1 text-xs font-semibold"
                             :class="gitClean ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-500/15 text-amber-300'"
                         >
-                            {{ gitClean ? 'Bersih' : 'Ada Perubahan' }}
+                            {{ gitClean ? 'Bersih' : 'Ada perubahan' }}
                         </span>
                     </div>
-                    <pre class="mt-4 overflow-x-auto whitespace-pre-wrap break-words text-sm leading-6 text-slate-200">{{ gitStatus.statusShort || 'Working tree clean' }}</pre>
+                    <pre class="mt-4 overflow-x-auto whitespace-pre-wrap break-words text-sm leading-6 text-slate-200">{{ gitStatus.statusShort || 'Repositori lokal bersih' }}</pre>
                     <p v-if="hasIgnoredLocalChanges && gitClean" class="mt-3 text-xs text-slate-400">
-                        package-lock.json diabaikan sebagai perubahan generatif, jadi update tetap bisa jalan.
+                        `package-lock.json` diabaikan sebagai perubahan generatif, sehingga update tetap bisa dijalankan.
                     </p>
                 </div>
             </article>
@@ -228,9 +237,17 @@ watch(pollWatcher, (running) => {
                     </div>
 
                     <div class="mt-6 rounded-3xl bg-slate-50 p-5">
-                        <p class="text-xs uppercase tracking-[0.25em] text-slate-500">Status Update</p>
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <p class="text-xs uppercase tracking-[0.25em] text-slate-500">Status Update</p>
+                            <span
+                                v-if="staleLockNotice"
+                                class="rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700"
+                            >
+                                Lock lama dibersihkan otomatis
+                            </span>
+                        </div>
                         <p class="mt-3 text-2xl font-semibold text-slate-900">
-                            {{ isRunning ? 'Update sedang berjalan' : 'Siap menjalankan update' }}
+                            {{ isRunning ? 'Pembaruan sedang berjalan' : 'Siap menjalankan pembaruan' }}
                         </p>
                         <p class="mt-2 break-all text-sm text-slate-500">
                             {{ systemStatus.updateBatExists ? systemStatus.updateBatPath : 'update.bat belum ditemukan di server.' }}
@@ -250,14 +267,24 @@ watch(pollWatcher, (running) => {
                             Jalankan update.bat
                         </button>
                         <p v-if="!gitClean" class="text-sm text-amber-700">
-                            Tombol update dinonaktifkan sementara karena repository masih punya perubahan lokal.
+                            Tombol update dinonaktifkan sementara karena repositori masih memiliki perubahan lokal.
                         </p>
+                        <div
+                            v-if="!gitClean"
+                            class="rounded-3xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900"
+                        >
+                            <p class="font-semibold">Update ditolak sampai repositori kembali bersih.</p>
+                            <p class="mt-1">
+                                Panel hanya mengizinkan update saat tidak ada perubahan tracked atau untracked yang berpotensi mengganggu.
+                                Periksa kotak <span class="font-mono">git status</span> di sebelah kiri, lalu gunakan tombol pembersihan di bawah atau commit/stash lebih dulu dari terminal.
+                            </p>
+                        </div>
 
                         <div class="rounded-3xl border border-amber-100 bg-amber-50/70 p-4">
-                            <p class="text-sm font-semibold text-amber-900">Bersihkan repository lokal</p>
+                            <p class="text-sm font-semibold text-amber-900">Bersihkan repositori lokal</p>
                             <p class="mt-1 text-sm text-amber-800">
-                                Gunakan ini kalau ingin menghapus perubahan lokal dulu supaya tombol update bisa langsung dipakai.
-                                Hati-hati, aksi hapus file untracked bisa menghilangkan file lokal yang belum masuk Git.
+                                Gunakan bagian ini jika ingin membersihkan perubahan lokal agar tombol update bisa langsung dipakai.
+                                Hati-hati, aksi menghapus file untracked dapat menghilangkan file lokal yang belum masuk Git.
                             </p>
 
                             <div class="mt-4 grid gap-3 lg:grid-cols-3">
@@ -267,7 +294,7 @@ watch(pollWatcher, (running) => {
                                     :disabled="isRunning || !hasLocalChanges"
                                     @click="runCleanupAction('restore-tracked', 'Balikkan semua perubahan file tracked ke commit terakhir? Perubahan pada file yang sudah ter-track akan hilang.')"
                                 >
-                                    Balikkan tracked
+                                    Balikkan file tracked
                                 </button>
                                 <button
                                     type="button"
@@ -275,7 +302,7 @@ watch(pollWatcher, (running) => {
                                     :disabled="isRunning || !hasLocalChanges"
                                     @click="runCleanupAction('clean-untracked', 'Hapus semua file untracked yang tidak di-ignore? Pastikan file lokal penting, termasuk file konfigurasi, sudah aman.')"
                                 >
-                                    Hapus untracked
+                                    Hapus file untracked
                                 </button>
                                 <button
                                     type="button"
@@ -316,7 +343,7 @@ watch(pollWatcher, (running) => {
 
                 <section class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[var(--shadow-panel)]">
                     <h3 class="text-lg font-semibold text-slate-900">Output Perintah</h3>
-                    <p class="mt-1 text-sm text-slate-500">Ringkasan cepat command yang paling sering dipakai saat pengecekan versi.</p>
+                            <p class="mt-1 text-sm text-slate-500">Ringkasan cepat perintah yang paling sering dipakai saat memeriksa versi server.</p>
 
                     <div class="mt-6 space-y-4">
                         <div
@@ -339,21 +366,21 @@ watch(pollWatcher, (running) => {
                     <p class="mt-1 text-sm text-slate-500">
                         {{
                             isRunning
-                                ? 'Log sedang dipantau otomatis tiap 5 detik. Area tampilannya dibatasi supaya panel tetap rapi.'
-                                : 'Gunakan Refresh Status untuk memuat ulang log terbaru.'
+                                ? 'Log dipantau otomatis setiap 5 detik. Area tampilan dibatasi agar panel tetap rapi.'
+                                : 'Gunakan Muat Ulang Status untuk memuat log terbaru.'
                         }}
                     </p>
                 </div>
                 <div class="text-right text-sm text-slate-500">
                     <p class="break-all">{{ systemStatus.logPath }}</p>
-                    <p>Update terakhir log: {{ systemStatus.logUpdatedAt || '-' }}</p>
+                    <p>Pembaruan log terakhir: {{ systemStatus.logUpdatedAt || '-' }}</p>
                 </div>
             </div>
 
             <div class="mt-6 overflow-hidden rounded-[1.75rem] border border-slate-800 bg-slate-950">
                 <div class="flex items-center justify-between gap-3 border-b border-slate-800 px-4 py-3 text-xs uppercase tracking-[0.25em] text-slate-400">
-                    <span>Live log preview</span>
-                    <span>{{ isRunning ? 'Auto refresh aktif' : 'Manual refresh' }}</span>
+                    <span>Pratinjau log langsung</span>
+                    <span>{{ isRunning ? 'Pembaruan otomatis aktif' : 'Pembaruan manual' }}</span>
                 </div>
                 <pre
                     class="max-h-[420px] overflow-auto whitespace-pre-wrap break-words px-4 py-4 text-sm leading-6 text-slate-200"
