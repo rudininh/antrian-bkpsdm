@@ -33,7 +33,7 @@ class SystemUpdateController extends Controller
         }
 
         $localHead = $this->runCommand(['git', 'rev-parse', 'HEAD'], $projectPath)['output'];
-        $remoteHead = $this->runCommand(['git', 'rev-parse', sprintf('origin/%s', $branch)], $projectPath)['output'];
+        $remoteHead = $this->resolveRemoteHead($branch, $projectPath);
         $statusShort = $this->runCommand(['git', 'status', '--short'], $projectPath)['output'];
         $blockingStatusShort = $this->filterBlockingGitStatus($statusShort);
         $ignoredStatusShort = $this->filterIgnoredGitStatus($statusShort);
@@ -76,7 +76,7 @@ class SystemUpdateController extends Controller
                     'output' => $localHead,
                 ],
                 [
-                    'label' => sprintf('git rev-parse origin/%s', $branch),
+                    'label' => sprintf('git ls-remote origin refs/heads/%s', $branch),
                     'output' => $remoteHead,
                 ],
                 [
@@ -313,6 +313,24 @@ class SystemUpdateController extends Controller
         fclose($handle);
 
         return ltrim($content);
+    }
+
+    protected function resolveRemoteHead(string $branch, string $projectPath): string
+    {
+        $remoteRef = sprintf('refs/heads/%s', $branch);
+        $lsRemote = $this->runCommand(['git', 'ls-remote', 'origin', $remoteRef], $projectPath, 30);
+
+        if (! $lsRemote['successful'] || $lsRemote['output'] === '') {
+            return $this->runCommand(['git', 'rev-parse', sprintf('origin/%s', $branch)], $projectPath)['output'];
+        }
+
+        $firstLine = trim(explode(PHP_EOL, $lsRemote['output'])[0] ?? '');
+
+        if ($firstLine === '') {
+            return $this->runCommand(['git', 'rev-parse', sprintf('origin/%s', $branch)], $projectPath)['output'];
+        }
+
+        return preg_split('/\s+/', $firstLine)[0] ?? '';
     }
 
     protected function filterBlockingGitStatus(string $statusOutput): string
