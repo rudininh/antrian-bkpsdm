@@ -34,6 +34,11 @@ const submit = () => {
     <GuestLayout>
         <Head title="Log in" />
 
+        <div class="mb-6 text-center">
+            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-teal-700">LOGIN ANTRIAN BKPSDM</p>
+            <p class="mt-2 text-sm text-slate-500">Masuk untuk mengelola layanan antrian dan pengaturan sistem.</p>
+        </div>
+
         <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
             {{ status }}
         </div>
