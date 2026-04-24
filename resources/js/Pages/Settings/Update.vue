@@ -253,6 +253,27 @@ watch(pollWatcher, (running) => {
                         `package-lock.json` diabaikan sebagai perubahan generatif, sehingga update tetap bisa dijalankan.
                     </p>
                 </div>
+
+                <div class="mt-6 rounded-3xl border border-slate-100 bg-slate-950 p-5 text-white">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <p class="font-mono text-xs uppercase tracking-[0.25em] text-slate-400">Command Update Manual</p>
+                            <p class="mt-2 text-sm text-slate-400">Satu baris, tinggal paste ke CMD lalu Enter sekali.</p>
+                        </div>
+                        <button
+                            type="button"
+                            class="rounded-2xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            :disabled="!manualUpdateCommand"
+                            @click="copyManualUpdateCommand"
+                        >
+                            Salin
+                        </button>
+                    </div>
+                    <pre class="mt-4 overflow-x-auto whitespace-pre text-sm leading-6 text-slate-200">{{ manualUpdateCommand || 'Command manual belum tersedia.' }}</pre>
+                    <p v-if="manualCommandCopyNotice" class="mt-3 text-sm text-emerald-400">
+                        {{ manualCommandCopyNotice }}
+                    </p>
+                </div>
             </article>
 
             <article class="min-w-0 space-y-6">
@@ -260,7 +281,7 @@ watch(pollWatcher, (running) => {
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <h3 class="text-lg font-semibold text-slate-900">Kontrol Server</h3>
-                            <p class="mt-1 text-sm text-slate-500">Salin command update manual dan jalankan perintah maintenance langsung dari panel admin.</p>
+                            <p class="mt-1 text-sm text-slate-500">Jalankan maintenance dan bersihkan repo dari panel admin.</p>
                         </div>
                         <span
                             class="rounded-full px-3 py-1 text-xs font-semibold"
@@ -292,24 +313,6 @@ watch(pollWatcher, (running) => {
                     </div>
 
                     <div class="mt-6 flex flex-col gap-3">
-                        <button
-                            type="button"
-                            class="inline-flex items-center justify-center rounded-2xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-500 disabled:cursor-not-allowed disabled:bg-slate-300"
-                            :disabled="!manualUpdateCommand"
-                            @click="copyManualUpdateCommand"
-                        >
-                            Salin command update
-                        </button>
-                        <p v-if="manualCommandCopyNotice" class="text-sm text-emerald-700">
-                            {{ manualCommandCopyNotice }}
-                        </p>
-                        <div class="rounded-3xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
-                            <p class="font-semibold">Command manual ini bisa dipaste ke CMD lokal.</p>
-                            <p class="mt-1">
-                                Status repo, commit terakhir, dan sinkronisasi Git tetap ditampilkan di sisi kiri agar kamu tetap bisa mengecek kondisi server sebelum menjalankan update.
-                            </p>
-                        </div>
-
                         <div class="rounded-3xl border border-amber-100 bg-amber-50/70 p-4">
                             <p class="text-sm font-semibold text-amber-900">Bersihkan repositori lokal</p>
                             <p class="mt-1 text-sm text-amber-800">
@@ -373,19 +376,9 @@ watch(pollWatcher, (running) => {
 
                 <section class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[var(--shadow-panel)]">
                     <h3 class="text-lg font-semibold text-slate-900">Output Perintah</h3>
-                            <p class="mt-1 text-sm text-slate-500">Ringkasan cepat perintah yang paling sering dipakai saat memeriksa versi server.</p>
+                    <p class="mt-1 text-sm text-slate-500">Ringkasan perintah yang sering dipakai saat cek server.</p>
 
                     <div class="mt-6 space-y-4">
-                        <div class="rounded-3xl border border-slate-100 bg-slate-950 p-5 text-white">
-                            <div class="flex flex-wrap items-start justify-between gap-3">
-                                <div>
-                                    <p class="font-mono text-xs uppercase tracking-[0.25em] text-slate-400">Command Manual Update</p>
-                                    <p class="mt-2 text-sm text-slate-400">Copy blok ini ke CMD lokal untuk update manual dari awal sampai akhir.</p>
-                                </div>
-                            </div>
-                            <pre class="mt-4 overflow-x-auto whitespace-pre-wrap break-words text-sm leading-6 text-slate-200">{{ manualUpdateCommand || 'Command manual belum tersedia.' }}</pre>
-                        </div>
-
                         <div
                             v-for="command in commandOutputs"
                             :key="command.label"

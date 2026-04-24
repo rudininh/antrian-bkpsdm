@@ -439,7 +439,7 @@ class SystemUpdateController extends Controller
     {
         $normalizedPath = str_replace('/', '\\', $projectPath);
 
-        return implode(PHP_EOL, [
+        return implode(' && ', [
             'cd /d "'.$normalizedPath.'"',
             'php artisan down --render=errors::503 --retry=60',
             'git pull origin "'.$branch.'"',

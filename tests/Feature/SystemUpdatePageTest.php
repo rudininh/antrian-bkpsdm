@@ -36,7 +36,7 @@ class SystemUpdatePageTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->get(route('system.update.index'))
+            ->get(route('system.update.index', [], false))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Settings/Update')
@@ -44,7 +44,7 @@ class SystemUpdatePageTest extends TestCase
                 ->where('gitStatus.localHead', 'abc123')
                 ->where('gitStatus.remoteHead', 'abc123')
                 ->where('gitStatus.hasLocalChanges', false)
-                ->where('manualUpdateCommand', fn (string $command) => str_contains($command, 'git pull origin') && str_contains($command, 'php artisan up'))
+                ->where('manualUpdateCommand', fn (string $command) => ! str_contains($command, PHP_EOL) && str_contains($command, 'git pull origin') && str_contains($command, 'php artisan up') && str_contains($command, ' && '))
                 ->where('systemStatus.updateBatExists', true)
                 ->has('commandOutputs', 3)
             );
@@ -73,7 +73,7 @@ class SystemUpdatePageTest extends TestCase
         ]);
 
         $this->actingAs($operator)
-            ->get(route('system.update.index'))
+            ->get(route('system.update.index', [], false))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Settings/Update')
@@ -104,7 +104,7 @@ class SystemUpdatePageTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->get(route('system.update.index'))
+            ->get(route('system.update.index', [], false))
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('gitStatus.hasLocalChanges', false)
@@ -145,7 +145,7 @@ class SystemUpdatePageTest extends TestCase
 
         try {
             $this->actingAs($admin)
-                ->get(route('system.update.index'))
+                ->get(route('system.update.index', [], false))
                 ->assertOk()
                 ->assertInertia(fn (Assert $page) => $page
                     ->component('Settings/Update')
@@ -169,9 +169,9 @@ class SystemUpdatePageTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->from(route('system.update.index'))
-            ->post(route('system.update.run'))
-            ->assertRedirect(route('system.update.index'))
+            ->from(route('system.update.index', [], false))
+            ->post(route('system.update.run', [], false))
+            ->assertRedirect(route('system.update.index', [], false))
             ->assertSessionHas('error', fn (string $message) => str_contains($message, 'working tree Git belum bersih') && str_contains($message, 'resources/js/Pages/Settings/Update.vue'));
     }
 
@@ -190,9 +190,9 @@ class SystemUpdatePageTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->from(route('system.update.index'))
-            ->post(route('system.update.cleanup', 'restore-tracked'))
-            ->assertRedirect(route('system.update.index'))
+            ->from(route('system.update.index', [], false))
+            ->post(route('system.update.cleanup', ['mode' => 'restore-tracked'], false))
+            ->assertRedirect(route('system.update.index', [], false))
             ->assertSessionHas('success', 'Repository berhasil dibersihkan. Working tree sekarang sudah clean dan update bisa dijalankan.');
     }
 
@@ -211,9 +211,9 @@ class SystemUpdatePageTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->from(route('system.update.index'))
-            ->post(route('system.update.cleanup', 'clean-untracked'))
-            ->assertRedirect(route('system.update.index'))
+            ->from(route('system.update.index', [], false))
+            ->post(route('system.update.cleanup', ['mode' => 'clean-untracked'], false))
+            ->assertRedirect(route('system.update.index', [], false))
             ->assertSessionHas('success', 'Repository berhasil dibersihkan. Working tree sekarang sudah clean dan update bisa dijalankan.');
     }
 }
