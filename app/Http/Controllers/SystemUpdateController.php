@@ -76,6 +76,7 @@ class SystemUpdateController extends Controller
                 'remoteUrl' => $remoteUrl,
                 'fetch' => $fetchResult,
             ],
+            'manualUpdateCommand' => $this->buildManualUpdateCommand($branch, $projectPath),
             'commandOutputs' => [
                 [
                     'label' => 'git rev-parse HEAD',
@@ -431,6 +432,27 @@ class SystemUpdateController extends Controller
             'del /q "%~f0" >nul 2>nul',
             'exit /b !EXIT_CODE!',
             '',
+        ]);
+    }
+
+    protected function buildManualUpdateCommand(string $branch, string $projectPath): string
+    {
+        $normalizedPath = str_replace('/', '\\', $projectPath);
+
+        return implode(PHP_EOL, [
+            'cd /d "'.$normalizedPath.'"',
+            'php artisan down --render=errors::503 --retry=60',
+            'git pull origin "'.$branch.'"',
+            'composer install --no-interaction --prefer-dist --optimize-autoloader',
+            'npm install',
+            'php artisan migrate --force',
+            'php artisan storage:link',
+            'php artisan optimize:clear',
+            'php artisan config:cache',
+            'php artisan route:cache',
+            'php artisan view:cache',
+            'npm run build',
+            'php artisan up',
         ]);
     }
 

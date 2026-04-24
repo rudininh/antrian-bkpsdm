@@ -1,7 +1,7 @@
 <script setup>
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
-import { computed, onBeforeUnmount, onMounted, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 defineOptions({
     layout: DashboardLayout,
@@ -10,6 +10,7 @@ defineOptions({
 const props = defineProps({
     systemStatus: Object,
     gitStatus: Object,
+    manualUpdateCommand: String,
     commandOutputs: Array,
     updateLog: Object,
     meta: Object,
@@ -25,10 +26,13 @@ const maintenanceMode = computed(() => props.systemStatus?.maintenanceMode ?? fa
 const hasLocalChanges = computed(() => props.gitStatus?.hasLocalChanges ?? false);
 const hasIgnoredLocalChanges = computed(() => props.gitStatus?.hasIgnoredLocalChanges ?? false);
 const gitClean = computed(() => !props.gitStatus?.statusShort);
-const canRunUpdate = computed(() => !isRunning.value && props.systemStatus?.updateBatExists && gitClean.value);
 const staleLockNotice = computed(() => props.systemStatus?.staleLockNotice ?? null);
+const manualUpdateCommand = computed(() => props.manualUpdateCommand ?? '');
+
+const manualCommandCopyNotice = ref('');
 
 let pollTimer = null;
+let copyNoticeTimer = null;
 
 const reloadStatus = () => {
     router.reload({
@@ -56,14 +60,43 @@ const stopPolling = () => {
     pollTimer = null;
 };
 
-const runUpdate = () => {
-    if (!window.confirm('Jalankan update.bat di server sekarang? Aplikasi mungkin masuk mode maintenance untuk sementara.')) {
+const clearCopyNotice = () => {
+    if (copyNoticeTimer) {
+        window.clearTimeout(copyNoticeTimer);
+        copyNoticeTimer = null;
+    }
+};
+
+const copyManualUpdateCommand = async () => {
+    if (!manualUpdateCommand.value) {
         return;
     }
 
-    router.post(route('system.update.run'), {}, {
-        preserveScroll: true,
-    });
+    try {
+        if (window.navigator?.clipboard?.writeText) {
+            await window.navigator.clipboard.writeText(manualUpdateCommand.value);
+        } else {
+            const textarea = document.createElement('textarea');
+            textarea.value = manualUpdateCommand.value;
+            textarea.setAttribute('readonly', 'true');
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+
+        manualCommandCopyNotice.value = 'Command update disalin. Paste ke CMD lokal lalu jalankan.';
+    } catch {
+        manualCommandCopyNotice.value = 'Gagal menyalin otomatis. Blok command di bawah lalu copy manual.';
+    }
+
+    clearCopyNotice();
+    copyNoticeTimer = window.setTimeout(() => {
+        manualCommandCopyNotice.value = '';
+        copyNoticeTimer = null;
+    }, 3000);
 };
 
 const runCleanupAction = (mode, confirmation) => {
@@ -100,6 +133,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     stopPolling();
+    clearCopyNotice();
 });
 
 const pollWatcher = computed(() => isRunning.value);
@@ -226,7 +260,7 @@ watch(pollWatcher, (running) => {
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <h3 class="text-lg font-semibold text-slate-900">Kontrol Server</h3>
-                            <p class="mt-1 text-sm text-slate-500">Jalankan update dan perintah maintenance langsung dari panel admin.</p>
+                            <p class="mt-1 text-sm text-slate-500">Salin command update manual dan jalankan perintah maintenance langsung dari panel admin.</p>
                         </div>
                         <span
                             class="rounded-full px-3 py-1 text-xs font-semibold"
@@ -247,7 +281,7 @@ watch(pollWatcher, (running) => {
                             </span>
                         </div>
                         <p class="mt-3 text-2xl font-semibold text-slate-900">
-                            {{ isRunning ? 'Pembaruan sedang berjalan' : 'Siap menjalankan pembaruan' }}
+                            {{ isRunning ? 'Pembaruan sedang berjalan' : 'Siap menyalin command pembaruan' }}
                         </p>
                         <p class="mt-2 break-all text-sm text-slate-500">
                             {{ systemStatus.updateBatExists ? systemStatus.updateBatPath : 'update.bat belum ditemukan di server.' }}
@@ -261,22 +295,18 @@ watch(pollWatcher, (running) => {
                         <button
                             type="button"
                             class="inline-flex items-center justify-center rounded-2xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-500 disabled:cursor-not-allowed disabled:bg-slate-300"
-                            :disabled="!canRunUpdate"
-                            @click="runUpdate"
+                            :disabled="!manualUpdateCommand"
+                            @click="copyManualUpdateCommand"
                         >
-                            Jalankan update.bat
+                            Salin command update
                         </button>
-                        <p v-if="!gitClean" class="text-sm text-amber-700">
-                            Tombol update dinonaktifkan sementara karena repositori masih memiliki perubahan lokal.
+                        <p v-if="manualCommandCopyNotice" class="text-sm text-emerald-700">
+                            {{ manualCommandCopyNotice }}
                         </p>
-                        <div
-                            v-if="!gitClean"
-                            class="rounded-3xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900"
-                        >
-                            <p class="font-semibold">Update ditolak sampai repositori kembali bersih.</p>
+                        <div class="rounded-3xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
+                            <p class="font-semibold">Command manual ini bisa dipaste ke CMD lokal.</p>
                             <p class="mt-1">
-                                Panel hanya mengizinkan update saat tidak ada perubahan tracked atau untracked yang berpotensi mengganggu.
-                                Periksa kotak <span class="font-mono">git status</span> di sebelah kiri, lalu gunakan tombol pembersihan di bawah atau commit/stash lebih dulu dari terminal.
+                                Status repo, commit terakhir, dan sinkronisasi Git tetap ditampilkan di sisi kiri agar kamu tetap bisa mengecek kondisi server sebelum menjalankan update.
                             </p>
                         </div>
 
@@ -346,6 +376,16 @@ watch(pollWatcher, (running) => {
                             <p class="mt-1 text-sm text-slate-500">Ringkasan cepat perintah yang paling sering dipakai saat memeriksa versi server.</p>
 
                     <div class="mt-6 space-y-4">
+                        <div class="rounded-3xl border border-slate-100 bg-slate-950 p-5 text-white">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <p class="font-mono text-xs uppercase tracking-[0.25em] text-slate-400">Command Manual Update</p>
+                                    <p class="mt-2 text-sm text-slate-400">Copy blok ini ke CMD lokal untuk update manual dari awal sampai akhir.</p>
+                                </div>
+                            </div>
+                            <pre class="mt-4 overflow-x-auto whitespace-pre-wrap break-words text-sm leading-6 text-slate-200">{{ manualUpdateCommand || 'Command manual belum tersedia.' }}</pre>
+                        </div>
+
                         <div
                             v-for="command in commandOutputs"
                             :key="command.label"

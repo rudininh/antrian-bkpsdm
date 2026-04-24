@@ -44,6 +44,7 @@ class SystemUpdatePageTest extends TestCase
                 ->where('gitStatus.localHead', 'abc123')
                 ->where('gitStatus.remoteHead', 'abc123')
                 ->where('gitStatus.hasLocalChanges', false)
+                ->where('manualUpdateCommand', fn (string $command) => str_contains($command, 'git pull origin') && str_contains($command, 'php artisan up'))
                 ->where('systemStatus.updateBatExists', true)
                 ->has('commandOutputs', 3)
             );
@@ -109,7 +110,7 @@ class SystemUpdatePageTest extends TestCase
                 ->where('gitStatus.hasLocalChanges', false)
                 ->where('gitStatus.hasIgnoredLocalChanges', true)
                 ->where('gitStatus.statusShort', '')
-                ->where('gitStatus.ignoredStatusShort', " M package-lock.json")
+                ->where('gitStatus.ignoredStatusShort', 'M package-lock.json')
             );
     }
 
@@ -171,7 +172,7 @@ class SystemUpdatePageTest extends TestCase
             ->from(route('system.update.index'))
             ->post(route('system.update.run'))
             ->assertRedirect(route('system.update.index'))
-            ->assertSessionHas('error', 'Update dari panel admin hanya bisa dijalankan saat working tree Git bersih. Commit, stash, atau buang perubahan lokal dulu.');
+            ->assertSessionHas('error', fn (string $message) => str_contains($message, 'working tree Git belum bersih') && str_contains($message, 'resources/js/Pages/Settings/Update.vue'));
     }
 
     public function test_admin_can_restore_tracked_changes_from_update_page(): void
