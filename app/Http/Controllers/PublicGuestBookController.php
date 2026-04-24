@@ -52,7 +52,7 @@ class PublicGuestBookController extends Controller
             ],
             'meta' => [
                 'title' => 'Buku Tamu',
-                'description' => 'Silakan isi buku tamu dan feedback sesuai nomor antrian yang sedang dipanggil.',
+                'description' => 'Silakan isi buku tamu dan feedback, dengan atau tanpa nomor antrian aktif.',
             ],
         ]);
     }
@@ -60,7 +60,7 @@ class PublicGuestBookController extends Controller
     public function upsertFromKiosk(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'queue_id' => ['required', 'integer', 'exists:queues,id'],
+            'queue_id' => ['nullable', 'integer', 'exists:queues,id'],
             'guest_name' => ['required', 'string', 'max:120'],
             'institution' => ['nullable', 'string', 'max:150'],
             'phone_number' => ['nullable', 'string', 'max:30'],
@@ -71,10 +71,32 @@ class PublicGuestBookController extends Controller
             'consultant_name' => ['nullable', 'string', 'max:150'],
         ]);
 
-        $queue = Queue::query()->findOrFail($data['queue_id']);
+        $queueId = $data['queue_id'] ?? null;
+        $payload = [
+            'guest_name' => $data['guest_name'],
+            'institution' => $data['institution'] ?? null,
+            'phone_number' => $data['phone_number'] ?? null,
+            'visit_purpose' => $data['visit_purpose'] ?? null,
+            'rating' => $data['rating'] ?? null,
+            'feedback' => $data['feedback'] ?? null,
+            'would_recommend' => $data['would_recommend'] ?? null,
+            'consultant_name' => $data['consultant_name'] ?? null,
+            'submitted_at' => now(),
+        ];
+
+        if ($queueId === null) {
+            GuestBook::query()->create([
+                ...$payload,
+                'queue_id' => null,
+            ]);
+
+            return to_route('public.guest-book.kiosk')->with('success', 'Buku tamu berhasil disimpan.');
+        }
+
+        $queue = Queue::query()->findOrFail($queueId);
 
         if (! in_array($queue->status, ['called', 'serving', 'completed'], true)) {
-            return back()->with('success', 'Nomor antrian belum aktif untuk pengisian buku tamu.');
+            return back()->with('error', 'Nomor antrian belum aktif untuk pengisian buku tamu.');
         }
 
         $existing = GuestBook::query()->where('queue_id', $queue->id)->first();
@@ -82,14 +104,7 @@ class PublicGuestBookController extends Controller
         GuestBook::query()->updateOrCreate(
             ['queue_id' => $queue->id],
             [
-                'guest_name' => $data['guest_name'],
-                'institution' => $data['institution'] ?? null,
-                'phone_number' => $data['phone_number'] ?? null,
-                'visit_purpose' => $data['visit_purpose'] ?? null,
-                'rating' => $data['rating'] ?? null,
-                'feedback' => $data['feedback'] ?? null,
-                'would_recommend' => $data['would_recommend'] ?? null,
-                'consultant_name' => $data['consultant_name'] ?? null,
+                ...$payload,
                 'submitted_at' => $existing?->submitted_at ?? now(),
             ],
         );

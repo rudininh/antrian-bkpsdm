@@ -80,10 +80,12 @@ const props = defineProps({
 
 const page = usePage();
 const statusLabel = computed(() => props.options.statuses?.[props.activeQueue?.status] ?? props.activeQueue?.status ?? '-');
+const isSuccessScreen = computed(() => Boolean(page.props.flash?.success));
 const currentQueueId = ref(props.activeQueue?.id ?? null);
 const consultantPickerOpen = ref(false);
 const consultantSearch = ref('');
 let intervalId = null;
+let timeoutId = null;
 
 const filteredStaff = computed(() => {
     const keyword = consultantSearch.value.trim().toLowerCase();
@@ -168,12 +170,24 @@ watch(
 );
 
 onMounted(() => {
+    if (isSuccessScreen.value) {
+        timeoutId = window.setTimeout(() => {
+            window.location.reload();
+        }, 5000);
+
+        return;
+    }
+
     intervalId = window.setInterval(reloadWithFallback, 3000);
 });
 
 onBeforeUnmount(() => {
     if (intervalId) {
         window.clearInterval(intervalId);
+    }
+
+    if (timeoutId) {
+        window.clearTimeout(timeoutId);
     }
 });
 </script>
@@ -182,13 +196,13 @@ onBeforeUnmount(() => {
     <Head title="Buku Tamu" />
 
     <div class="w-full">
-        <section class="w-full rounded-[2rem] border border-white/70 bg-white/92 p-6 shadow-[0_30px_90px_-50px_rgba(15,23,42,0.55)]">
+        <div v-if="isSuccessScreen" class="flex min-h-screen items-center justify-center px-6 text-center">
+            <p class="text-3xl font-semibold tracking-tight text-slate-950 sm:text-5xl">Terima Kasih telah mengisi Buku tamu</p>
+        </div>
+
+        <section v-else class="w-full rounded-[2rem] border border-white/70 bg-white/92 p-6 shadow-[0_30px_90px_-50px_rgba(15,23,42,0.55)]">
             <h1 class="mt-2 text-2xl font-semibold text-slate-950 sm:text-3xl">{{ meta.title }}</h1>
             <p class="mt-2 text-sm leading-6 text-slate-600">{{ meta.description }}</p>
-
-            <p v-if="page.props.flash.success" class="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
-                {{ page.props.flash.success }}
-            </p>
 
             <div class="mt-5 rounded-[1.4rem] border border-slate-200 bg-slate-50 p-4">
                 <template v-if="activeQueue">
@@ -205,8 +219,8 @@ onBeforeUnmount(() => {
                     <div class="mt-3 text-sm text-slate-500">Dipanggil {{ activeQueue.calledAt || '-' }}</div>
                 </template>
                 <template v-else>
-                    <p class="text-sm font-medium text-slate-700">Belum ada nomor aktif yang dipanggil saat ini.</p>
-                    <p class="mt-1 text-sm text-slate-500">Form akan aktif otomatis saat ada nomor berstatus dipanggil atau sedang diproses.</p>
+                    <p class="text-sm font-medium text-slate-700">Tidak ada antrian aktif saat ini.</p>
+                    <p class="mt-1 text-sm text-slate-500">Buku tamu tetap bisa diisi untuk tamu umum tanpa harus menunggu nomor dipanggil.</p>
                 </template>
             </div>
 
@@ -216,11 +230,11 @@ onBeforeUnmount(() => {
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <label class="text-sm font-medium text-slate-700">Layanan Terpilih</label>
-                        <input :value="activeQueue?.serviceName ?? '-'" type="text" class="mt-1 w-full rounded-xl border-slate-300 bg-slate-100 text-sm text-slate-700 shadow-sm" disabled />
+                        <input :value="activeQueue?.serviceName ?? 'Tamu umum'" type="text" class="mt-1 w-full rounded-xl border-slate-300 bg-slate-100 text-sm text-slate-700 shadow-sm" disabled />
                     </div>
                     <div>
                         <label class="text-sm font-medium text-slate-700">Nama Tamu</label>
-                        <input v-model="form.guest_name" type="text" class="mt-1 w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500" :disabled="!activeQueue || form.processing" />
+                        <input v-model="form.guest_name" type="text" class="mt-1 w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500" :disabled="form.processing" />
                         <InputError class="mt-2" :message="form.errors.guest_name" />
                     </div>
                 </div>
@@ -228,12 +242,12 @@ onBeforeUnmount(() => {
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <label class="text-sm font-medium text-slate-700">Instansi / Unit</label>
-                        <input v-model="form.institution" type="text" class="mt-1 w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500" :disabled="!activeQueue || form.processing" />
+                        <input v-model="form.institution" type="text" class="mt-1 w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500" :disabled="form.processing" />
                         <InputError class="mt-2" :message="form.errors.institution" />
                     </div>
                     <div>
                         <label class="text-sm font-medium text-slate-700">Nomor HP</label>
-                        <input v-model="form.phone_number" type="text" class="mt-1 w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500" :disabled="!activeQueue || form.processing" />
+                        <input v-model="form.phone_number" type="text" class="mt-1 w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500" :disabled="form.processing" />
                         <InputError class="mt-2" :message="form.errors.phone_number" />
                     </div>
                 </div>
@@ -242,7 +256,7 @@ onBeforeUnmount(() => {
                     <label class="text-sm font-medium text-slate-700">Nama Konsultan / Pegawai yang Melayani</label>
                     <div class="mt-1 flex flex-col gap-2 sm:flex-row">
                         <input v-model="form.consultant_name" type="text" class="w-full rounded-xl border-slate-300 bg-slate-100 text-sm text-slate-700 shadow-sm" placeholder="Belum dipilih" disabled />
-                        <button type="button" class="inline-flex items-center justify-center rounded-xl border border-teal-300 bg-teal-50 px-4 py-2.5 text-sm font-semibold text-teal-800 transition hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!activeQueue || form.processing" @click="consultantPickerOpen = true">
+                        <button type="button" class="inline-flex items-center justify-center rounded-xl border border-teal-300 bg-teal-50 px-4 py-2.5 text-sm font-semibold text-teal-800 transition hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-50" :disabled="form.processing" @click="consultantPickerOpen = true">
                             Pilih Nama Pegawai
                         </button>
                     </div>
@@ -251,13 +265,13 @@ onBeforeUnmount(() => {
 
                 <div>
                     <label class="text-sm font-medium text-slate-700">Detail Permasalahan</label>
-                    <textarea v-model="form.visit_purpose" rows="3" class="mt-1 w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500" :disabled="!activeQueue || form.processing" />
+                    <textarea v-model="form.visit_purpose" rows="3" class="mt-1 w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500" :disabled="form.processing" />
                     <InputError class="mt-2" :message="form.errors.visit_purpose" />
                 </div>
 
                 <div>
                     <label class="text-sm font-medium text-slate-700">Rating Pelayanan (1-5)</label>
-                    <select v-model="form.rating" class="mt-1 w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500" :disabled="!activeQueue || form.processing">
+                    <select v-model="form.rating" class="mt-1 w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500" :disabled="form.processing">
                         <option :value="null">Belum memberi rating</option>
                         <option :value="1">1 - Sangat kurang</option>
                         <option :value="2">2 - Kurang</option>
@@ -271,20 +285,20 @@ onBeforeUnmount(() => {
                 <div>
                     <label class="text-sm font-medium text-slate-700">Rekomendasi Layanan</label>
                     <div class="mt-2 flex flex-wrap gap-2">
-                        <button type="button" class="rounded-full border px-4 py-2 text-sm font-semibold transition" :class="form.would_recommend === true ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'" :disabled="!activeQueue || form.processing" @click="setRecommend(true)">Ya</button>
-                        <button type="button" class="rounded-full border px-4 py-2 text-sm font-semibold transition" :class="form.would_recommend === false ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'" :disabled="!activeQueue || form.processing" @click="setRecommend(false)">Tidak</button>
-                        <button type="button" class="rounded-full border px-4 py-2 text-sm font-semibold transition" :class="form.would_recommend === null ? 'border-slate-500 bg-slate-100 text-slate-800' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'" :disabled="!activeQueue || form.processing" @click="setRecommend(null)">Lewati</button>
+                        <button type="button" class="rounded-full border px-4 py-2 text-sm font-semibold transition" :class="form.would_recommend === true ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'" :disabled="form.processing" @click="setRecommend(true)">Ya</button>
+                        <button type="button" class="rounded-full border px-4 py-2 text-sm font-semibold transition" :class="form.would_recommend === false ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'" :disabled="form.processing" @click="setRecommend(false)">Tidak</button>
+                        <button type="button" class="rounded-full border px-4 py-2 text-sm font-semibold transition" :class="form.would_recommend === null ? 'border-slate-500 bg-slate-100 text-slate-800' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'" :disabled="form.processing" @click="setRecommend(null)">Lewati</button>
                     </div>
                     <InputError class="mt-2" :message="form.errors.would_recommend" />
                 </div>
 
                 <div>
                     <label class="text-sm font-medium text-slate-700">Saran / Catatan</label>
-                    <textarea v-model="form.feedback" rows="3" class="mt-1 w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500" :disabled="!activeQueue || form.processing" />
+                    <textarea v-model="form.feedback" rows="3" class="mt-1 w-full rounded-xl border-slate-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500" :disabled="form.processing" />
                     <InputError class="mt-2" :message="form.errors.feedback" />
                 </div>
 
-                <button type="submit" class="inline-flex w-full items-center justify-center rounded-[1rem] bg-slate-950 px-6 py-4 text-base font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!activeQueue || form.processing">
+                <button type="submit" class="inline-flex w-full items-center justify-center rounded-[1rem] bg-slate-950 px-6 py-4 text-base font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50" :disabled="form.processing">
                     {{ form.processing ? 'Menyimpan...' : 'Simpan' }}
                 </button>
             </form>

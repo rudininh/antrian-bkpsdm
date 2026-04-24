@@ -19,10 +19,18 @@ const isGuestBookPage = computed(() => {
 
     return String(componentName).startsWith('Public/GuestBook');
 });
+const isGuestBookSuccessScreen = computed(() => {
+    const componentName = page.component?.value ?? page.component ?? '';
+
+    return String(componentName) === 'Public/GuestBookKiosk' && Boolean(page.props.flash?.success);
+});
 </script>
 
 <template>
-    <div class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(20,184,166,0.2),_transparent_35%),linear-gradient(180deg,_#f8fafc_0%,_#ecfeff_45%,_#f8fafc_100%)] text-slate-900">
+    <div v-if="isGuestBookSuccessScreen" class="min-h-screen bg-white text-slate-950">
+        <slot />
+    </div>
+    <div v-else class="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(20,184,166,0.2),_transparent_35%),linear-gradient(180deg,_#f8fafc_0%,_#ecfeff_45%,_#f8fafc_100%)] text-slate-900">
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <section class="mb-6 rounded-[2rem] border border-white/70 bg-white/90 px-5 py-5 shadow-[0_24px_70px_-50px_rgba(15,23,42,0.5)] sm:px-6">
                 <div class="flex items-start justify-between gap-4">
