@@ -90,36 +90,38 @@ const statusClasses = {
                     </div>
                 </div>
 
-                <div class="mt-6 grid gap-4 md:grid-cols-2">
+                <div class="mt-6 grid gap-4">
                     <div
                         v-for="call in props.activeCalls"
                         :key="call.id"
-                        class="rounded-3xl border border-slate-100 bg-slate-50 p-5"
+                        class="rounded-3xl border border-slate-100 bg-slate-50 p-5 shadow-sm"
                     >
-                        <div class="flex items-start justify-between gap-4">
-                            <div>
-                                <p class="text-xs uppercase tracking-[0.2em] text-slate-500">{{ call.counter_name }}</p>
-                                <h4 class="mt-3 text-3xl font-semibold text-slate-900">{{ call.ticket_number }}</h4>
-                                <p class="mt-1 text-sm text-slate-600">{{ call.service_name }}</p>
+                        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-bold uppercase tracking-[0.2em] text-slate-500">{{ call.counter_name }}</p>
+                                <h4 class="mt-3 text-4xl font-black text-slate-900">{{ call.ticket_number }}</h4>
+                                <p class="mt-1 text-lg font-semibold text-slate-700">{{ call.service_name }}</p>
+                                <p class="mt-4 text-sm text-slate-500">Dipanggil pukul {{ call.called_at }}</p>
                             </div>
-                            <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="statusClasses[call.status] ?? 'bg-slate-100 text-slate-700'">
-                                {{ call.status }}
-                            </span>
+
+                            <div class="flex shrink-0 flex-wrap gap-3 lg:justify-end">
+                                <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="statusClasses[call.status] ?? 'bg-slate-100 text-slate-700'">
+                                    {{ call.status }}
+                                </span>
+                            </div>
                         </div>
 
-                        <p class="mt-4 text-sm text-slate-500">Dipanggil pukul {{ call.called_at }}</p>
-
-                        <div class="mt-4 flex flex-wrap gap-3">
-                            <button type="button" class="text-sm font-medium text-amber-700 hover:text-amber-900" @click="postAction('recall', call.queue_id)">
+                        <div class="mt-5 flex flex-wrap gap-3">
+                            <button type="button" class="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600" @click="postAction('recall', call.queue_id)">
                                 Panggil Ulang
                             </button>
-                            <button type="button" class="text-sm font-medium text-sky-700 hover:text-sky-900" @click="postAction('start', call.queue_id)">
+                            <button type="button" class="rounded-full bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700" @click="postAction('start', call.queue_id)">
                                 Proses
                             </button>
-                            <button type="button" class="text-sm font-medium text-emerald-700 hover:text-emerald-900" @click="postAction('complete', call.queue_id)">
+                            <button type="button" class="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-700" @click="postAction('complete', call.queue_id)">
                                 Selesai
                             </button>
-                            <button type="button" class="text-sm font-medium text-rose-600 hover:text-rose-800" @click="postAction('skip', call.queue_id)">
+                            <button type="button" class="rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700" @click="postAction('skip', call.queue_id)">
                                 Lewati
                             </button>
                         </div>
