@@ -51,12 +51,19 @@ class MonitoringController extends Controller
                 'called_at' => $call->called_at?->format('H:i:s'),
                 'notes' => $call->notes,
             ])->values(),
-            'waitingQueues' => $waitingQueues->map(fn (Queue $queue) => [
-                'id' => $queue->id,
-                'ticket_number' => $queue->ticket_number,
-                'service_name' => $queue->service?->name,
-                'queued_at' => $queue->queued_at?->format('H:i'),
-            ])->values(),
+            'waitingQueues' => $waitingQueues->map(function (Queue $queue) {
+                $waitingMinutes = $queue->queued_at ? max(0, $queue->queued_at->diffInMinutes(now())) : null;
+
+                return [
+                    'id' => $queue->id,
+                    'ticket_number' => $queue->ticket_number,
+                    'service_name' => $queue->service?->name,
+                    'queued_at' => $queue->queued_at?->format('H:i'),
+                    'queued_at_iso' => $queue->queued_at?->toIso8601String(),
+                    'waiting_minutes' => $waitingMinutes,
+                    'waiting_label' => $this->formatWaitingMinutes($waitingMinutes ?? 0),
+                ];
+            })->values(),
             'meta' => [
                 'title' => 'Panel Panggilan Receptionist',
                 'description' => 'Kelola panggilan aktif dan antrian menunggu dari satu meja receptionist.',
@@ -179,5 +186,18 @@ class MonitoringController extends Controller
                 'is_active' => true,
             ],
         );
+    }
+
+    protected function formatWaitingMinutes(int $minutes): string
+    {
+        if ($minutes <= 0) {
+            return 'baru saja';
+        }
+
+        if ($minutes === 1) {
+            return '1 menit';
+        }
+
+        return $minutes.' menit';
     }
 }
