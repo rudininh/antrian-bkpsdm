@@ -218,8 +218,10 @@ onBeforeUnmount(() => {
             <div class="flex min-h-0 flex-1 flex-col rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-[0_30px_90px_-50px_rgba(15,23,42,0.55)] xl:overflow-hidden">
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p class="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">Ambil Nomor</p>
-                        <h2 class="mt-1 text-xl font-semibold text-slate-950">Pilih kelompok layanan lalu terbitkan nomor otomatis.</h2>
+                        <p class="text-base font-black uppercase tracking-[0.24em] text-teal-800 sm:text-lg">Ambil Nomor</p>
+                        <h2 class="mt-2 text-2xl font-black leading-tight text-slate-950 sm:text-3xl lg:text-4xl">
+                            Pilih kelompok layanan lalu terbitkan nomor otomatis.
+                        </h2>
                     </div>
                 </div>
 
@@ -227,28 +229,28 @@ onBeforeUnmount(() => {
                     <div class="rounded-[1.8rem] border border-slate-200 bg-[linear-gradient(145deg,_rgba(255,255,255,0.94),_rgba(240,253,250,0.98))] p-5 shadow-[0_24px_70px_-50px_rgba(15,23,42,0.5)]">
                         <div class="flex flex-col gap-4">
                             <div>
-                                <p class="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Pilihan Layanan</p>
+                                <p class="text-sm font-black uppercase tracking-[0.28em] text-slate-700">Pilihan Layanan</p>
                                 <template v-if="selectedService">
                                     <div class="mt-3 flex items-center gap-3">
-                                        <span class="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">
+                                        <span class="rounded-full bg-slate-950 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-white">
                                             {{ selectedService.code }}
                                         </span>
-                                        <h3 class="text-2xl font-semibold text-slate-950">{{ selectedService.groupTitle }}</h3>
+                                        <h3 class="text-3xl font-black text-slate-950 sm:text-4xl">{{ selectedService.groupTitle }}</h3>
                                     </div>
-                                    <p class="mt-3 text-sm leading-6 text-slate-600">{{ selectedService.description }}</p>
+                                    <p class="mt-4 text-base font-semibold leading-7 text-slate-800">{{ selectedService.description }}</p>
                                     <div class="mt-4 flex flex-wrap gap-2">
                                         <span
                                             v-for="item in selectedService.items"
                                             :key="item"
-                                            class="rounded-full border border-teal-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700"
+                                            class="rounded-full border border-teal-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800"
                                         >
                                             {{ item }}
                                         </span>
                                     </div>
                                 </template>
                                 <template v-else>
-                                    <h3 class="mt-3 text-2xl font-semibold text-slate-950">Belum ada layanan dipilih.</h3>
-                                    <p class="mt-3 text-sm leading-6 text-slate-600">
+                                    <h3 class="mt-3 text-3xl font-black text-slate-950 sm:text-4xl">Belum ada layanan dipilih.</h3>
+                                    <p class="mt-4 text-base font-semibold leading-7 text-slate-800">
                                         Tekan tombol pilih layanan untuk membuka popup kategori layanan A sampai G, lalu pilih kebutuhan yang sesuai.
                                     </p>
                                 </template>
@@ -256,7 +258,7 @@ onBeforeUnmount(() => {
 
                             <button
                                 type="button"
-                                class="inline-flex w-full items-center justify-center rounded-[1rem] border border-slate-950 bg-white px-6 py-4 text-base font-semibold text-slate-950 transition hover:bg-slate-50"
+                                class="inline-flex w-full items-center justify-center rounded-[1rem] border border-slate-950 bg-white px-6 py-5 text-lg font-black text-slate-950 transition hover:bg-slate-50"
                                 @click="servicePickerOpen = true"
                             >
                                 {{ selectedService ? 'Ubah Layanan' : 'Pilih Layanan' }}
@@ -265,12 +267,12 @@ onBeforeUnmount(() => {
 
                         <div class="mt-5 grid gap-3 sm:grid-cols-2">
                             <div class="rounded-[1.25rem] bg-slate-100 px-4 py-4">
-                                <div class="text-sm text-slate-500">Dalam antrean</div>
-                                <div class="mt-1 text-2xl font-semibold text-slate-950">{{ selectedService?.waitingCount ?? 0 }}</div>
+                                <div class="text-base font-bold text-slate-700">Dalam antrean</div>
+                                <div class="mt-1 text-3xl font-black text-slate-950">{{ selectedService?.waitingCount ?? 0 }}</div>
                             </div>
                             <div class="rounded-[1.25rem] bg-emerald-50 px-4 py-4">
-                                <div class="text-sm text-emerald-700">Sedang dipanggil</div>
-                                <div class="mt-1 text-2xl font-semibold text-emerald-800">{{ selectedService?.calledCount ?? 0 }}</div>
+                                <div class="text-base font-bold text-emerald-800">Sedang dipanggil</div>
+                                <div class="mt-1 text-3xl font-black text-emerald-900">{{ selectedService?.calledCount ?? 0 }}</div>
                             </div>
                         </div>
                     </div>
@@ -280,7 +282,7 @@ onBeforeUnmount(() => {
                     <div class="border-t border-slate-100 pt-3">
                         <button
                             type="submit"
-                            class="inline-flex w-full items-center justify-center rounded-[1rem] bg-slate-950 px-6 py-4 text-base font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                            class="inline-flex w-full items-center justify-center rounded-[1rem] bg-slate-950 px-6 py-5 text-xl font-black text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                             :disabled="form.processing || !form.service_code"
                         >
                             {{ form.processing ? 'Memproses...' : 'Ambil Nomor Sekarang' }}
@@ -294,7 +296,7 @@ onBeforeUnmount(() => {
             <div class="flex min-h-0 flex-col rounded-[2rem] border border-white/70 bg-slate-950 p-4 text-white shadow-[0_30px_90px_-50px_rgba(15,23,42,0.8)]">
                 <div class="flex items-start justify-between gap-3">
                     <div>
-                        <p class="text-sm font-semibold uppercase tracking-[0.24em] text-teal-300">Monitor Publik</p>
+                            <p class="text-base font-black uppercase tracking-[0.24em] text-teal-200">Monitor Publik</p>
                     </div>
                     <div class="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-teal-200">
                         Live
@@ -304,25 +306,25 @@ onBeforeUnmount(() => {
                 <div v-if="primaryCall" class="mt-4 rounded-[1.8rem] border border-amber-300/70 bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.28),_rgba(15,23,42,0.96)_60%)] p-6 shadow-[0_0_30px_rgba(251,191,36,0.28)]">
                     <div class="flex items-start justify-between gap-4">
                         <div>
-                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-amber-200">Sedang Dipanggil</p>
-                            <div class="mt-4 text-6xl font-semibold tracking-[0.12em] text-white sm:text-7xl">{{ primaryCall.ticketNumber }}</div>
-                            <div class="mt-4 text-lg font-medium text-slate-200">{{ primaryCall.serviceName }}</div>
+                            <p class="text-sm font-black uppercase tracking-[0.28em] text-amber-100 sm:text-base">Sedang Dipanggil</p>
+                            <div class="mt-4 text-5xl font-black tracking-[0.12em] text-white sm:text-6xl">{{ primaryCall.ticketNumber }}</div>
+                            <div class="mt-4 text-xl font-bold text-slate-100">{{ primaryCall.serviceName }}</div>
                         </div>
                         <div class="text-right">
-                            <div class="text-sm font-semibold uppercase tracking-[0.22em] text-teal-200">{{ primaryCall.counterName }}</div>
-                            <div class="mt-4 inline-flex rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white">
+                            <div class="text-base font-black uppercase tracking-[0.22em] text-teal-100">{{ primaryCall.counterName }}</div>
+                            <div class="mt-4 inline-flex rounded-full bg-white/10 px-4 py-2 text-base font-bold text-white">
                                 {{ primaryCall.status === 'serving' ? 'Sedang Diproses' : 'Segera Menuju Meja' }}
                             </div>
                         </div>
                     </div>
                     <div class="mt-6 grid gap-3 sm:grid-cols-2">
                         <div class="rounded-[1.2rem] bg-white/8 px-4 py-3">
-                            <div class="text-xs uppercase tracking-[0.18em] text-slate-300">Jam Panggil</div>
-                            <div class="mt-2 text-2xl font-semibold text-white">{{ primaryCall.calledAt }}</div>
+                            <div class="text-sm font-black uppercase tracking-[0.18em] text-slate-200">Jam Panggil</div>
+                            <div class="mt-2 text-3xl font-black text-white">{{ primaryCall.calledAt }}</div>
                         </div>
                         <div class="rounded-[1.2rem] bg-white/8 px-4 py-3">
-                            <div class="text-xs uppercase tracking-[0.18em] text-slate-300">Informasi</div>
-                            <div class="mt-2 text-base text-slate-100">Tamu dengan nomor ini silakan segera menuju meja yang disebutkan.</div>
+                            <div class="text-sm font-black uppercase tracking-[0.18em] text-slate-200">Informasi</div>
+                            <div class="mt-2 text-lg font-semibold leading-7 text-slate-50">Tamu dengan nomor ini silakan segera menuju meja yang disebutkan.</div>
                         </div>
                     </div>
                 </div>
@@ -337,9 +339,9 @@ onBeforeUnmount(() => {
                         :key="call.id"
                         class="rounded-[1.2rem] border border-white/10 bg-white/5 px-3 py-3"
                     >
-                        <div class="text-lg font-semibold tracking-[0.08em] text-white">{{ call.ticketNumber }}</div>
-                        <div class="mt-1 truncate text-xs text-slate-300">{{ call.serviceName }}</div>
-                        <div class="mt-3 flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.16em] text-teal-200">
+                        <div class="text-xl font-black tracking-[0.08em] text-white">{{ call.ticketNumber }}</div>
+                        <div class="mt-1 truncate text-sm font-semibold text-slate-200">{{ call.serviceName }}</div>
+                        <div class="mt-3 flex items-center justify-between gap-2 text-xs font-bold uppercase tracking-[0.16em] text-teal-100">
                             <span>{{ call.counterName }}</span>
                             <span>{{ call.calledAt }}</span>
                         </div>
@@ -348,16 +350,16 @@ onBeforeUnmount(() => {
 
                 <div class="mt-4 grid gap-2 border-t border-white/10 pt-3 sm:grid-cols-3">
                     <div class="rounded-2xl bg-white/5 px-3 py-2">
-                        <div class="text-[10px] uppercase tracking-[0.18em] text-slate-400">Panduan</div>
-                        <div class="mt-1 text-xs text-slate-200">1. Pilih layanan.</div>
+                        <div class="text-sm font-black uppercase tracking-[0.18em] text-slate-300">Panduan</div>
+                        <div class="mt-1 text-base font-semibold text-slate-100">1. Pilih layanan.</div>
                     </div>
                     <div class="rounded-2xl bg-white/5 px-3 py-2">
-                        <div class="text-[10px] uppercase tracking-[0.18em] text-slate-400">Panduan</div>
-                        <div class="mt-1 text-xs text-slate-200">2. Ambil nomor.</div>
+                        <div class="text-sm font-black uppercase tracking-[0.18em] text-slate-300">Panduan</div>
+                        <div class="mt-1 text-base font-semibold text-slate-100">2. Ambil nomor.</div>
                     </div>
                     <div class="rounded-2xl bg-white/5 px-3 py-2">
-                        <div class="text-[10px] uppercase tracking-[0.18em] text-slate-400">Panduan</div>
-                        <div class="mt-1 text-xs text-slate-200">3. Dengarkan panggilan.</div>
+                        <div class="text-sm font-black uppercase tracking-[0.18em] text-slate-300">Panduan</div>
+                        <div class="mt-1 text-base font-semibold text-slate-100">3. Dengarkan panggilan.</div>
                     </div>
                 </div>
             </div>
@@ -368,15 +370,15 @@ onBeforeUnmount(() => {
         <div class="bg-[radial-gradient(circle_at_top_left,_rgba(20,184,166,0.16),_transparent_35%),linear-gradient(180deg,_#f8fafc_0%,_#ecfeff_100%)] p-6">
             <div class="flex items-start justify-between gap-4">
                 <div>
-                    <p class="text-sm font-semibold uppercase tracking-[0.24em] text-teal-700">Pilih Layanan</p>
-                    <h3 class="mt-2 text-2xl font-semibold text-slate-950">Satu popup untuk semua kelompok layanan BKPSDM.</h3>
-                    <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                    <p class="text-base font-black uppercase tracking-[0.24em] text-teal-800">Pilih Layanan</p>
+                    <h3 class="mt-2 text-3xl font-black text-slate-950">Satu popup untuk semua kelompok layanan BKPSDM.</h3>
+                    <p class="mt-2 max-w-2xl text-base font-semibold leading-7 text-slate-800">
                         Pilih kelompok layanan yang paling sesuai. Prefix tiket akan mengikuti kategori layanan yang Anda pilih.
                     </p>
                 </div>
                 <button
                     type="button"
-                    class="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    class="rounded-full border border-slate-200 bg-white px-4 py-2 text-base font-bold text-slate-700 transition hover:bg-slate-50"
                     @click="servicePickerOpen = false"
                 >
                     Tutup
@@ -388,7 +390,7 @@ onBeforeUnmount(() => {
                     v-for="service in services"
                     :key="service.code"
                     type="button"
-                    class="text-left rounded-[1.5rem] border p-5 transition"
+                    class="rounded-[1.5rem] border p-5 text-left transition"
                     :class="form.service_code === service.code
                         ? 'border-teal-500 bg-white shadow-[0_20px_50px_-40px_rgba(13,148,136,0.7)]'
                         : 'border-white/80 bg-white/90 hover:border-teal-300 hover:bg-white'"
@@ -397,17 +399,17 @@ onBeforeUnmount(() => {
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <div class="flex items-center gap-3">
-                                <span class="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">
+                                <span class="rounded-full bg-slate-950 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-white">
                                     {{ service.code }}
                                 </span>
-                                <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{{ service.groupTitle }}</div>
+                                <div class="text-sm font-black uppercase tracking-[0.18em] text-slate-700">{{ service.groupTitle }}</div>
                             </div>
-                            <h4 class="mt-3 text-xl font-semibold text-slate-950">{{ service.name }}</h4>
-                            <p class="mt-2 text-sm leading-6 text-slate-600">{{ service.description }}</p>
+                            <h4 class="mt-3 text-2xl font-black text-slate-950">{{ service.name }}</h4>
+                            <p class="mt-2 text-base font-semibold leading-7 text-slate-800">{{ service.description }}</p>
                         </div>
-                        <div class="rounded-2xl bg-slate-100 px-3 py-2 text-center text-xs text-slate-500">
+                        <div class="rounded-2xl bg-slate-100 px-3 py-2 text-center text-sm text-slate-700">
                             <div>Antrean</div>
-                            <div class="mt-1 text-lg font-semibold text-slate-950">{{ service.waitingCount }}</div>
+                            <div class="mt-1 text-2xl font-black text-slate-950">{{ service.waitingCount }}</div>
                         </div>
                     </div>
 
@@ -415,7 +417,7 @@ onBeforeUnmount(() => {
                         <span
                             v-for="item in service.items"
                             :key="item"
-                            class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700"
+                            class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-800"
                         >
                             {{ item }}
                         </span>

@@ -3,16 +3,17 @@ import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 
 const page = usePage();
-const user = computed(() => page.props.auth?.user ?? null);
 const urls = computed(() => page.props.urls ?? {});
 const publicPage = computed(() => page.props.publicPage ?? {});
-const showHeaderDashboard = computed(() => {
-    return user.value && publicPage.value?.title !== 'Ambil Nomor Antrian' && !isTakeQueuePage.value;
-});
 const isTakeQueuePage = computed(() => {
     const componentName = page.component?.value ?? page.component ?? '';
 
     return String(componentName) === 'Public/TakeQueue';
+});
+const isTicketSuccessPage = computed(() => {
+    const componentName = page.component?.value ?? page.component ?? '';
+
+    return String(componentName) === 'Public/TicketSuccess';
 });
 const isGuestBookPage = computed(() => {
     const componentName = page.component?.value ?? page.component ?? '';
@@ -39,15 +40,15 @@ const isGuestBookSuccessScreen = computed(() => {
                             <img :src="urls.logoKotaBanjarmasin" alt="Logo Kota Banjarmasin" class="h-full w-full object-contain" />
                         </div>
                         <div>
-                            <p class="text-xs font-semibold uppercase tracking-[0.28em] text-teal-700">Pemerintah Kota Banjarmasin</p>
-                            <h2 class="mt-2 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+                            <p class="text-sm font-semibold uppercase tracking-[0.28em] text-teal-800">Pemerintah Kota Banjarmasin</p>
+                            <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
                                 Badan Kepegawaian dan Pengembangan Sumber Daya Manusia Kota Banjarmasin
                             </h2>
                         </div>
                     </div>
 
                     <Link
-                        v-if="isGuestBookPage || isTakeQueuePage"
+                        v-if="isGuestBookPage"
                         :href="urls.dashboard"
                         class="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
                     >
@@ -59,22 +60,25 @@ const isGuestBookSuccessScreen = computed(() => {
             <header v-if="!isGuestBookPage" class="rounded-[2rem] border border-white/70 bg-white/80 px-5 py-5 shadow-[0_30px_90px_-50px_rgba(15,23,42,0.55)] backdrop-blur sm:px-6">
                 <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
-                        <Link v-if="!isTakeQueuePage" :href="urls.home" class="text-xs font-semibold uppercase tracking-[0.35em] text-teal-700">
+                        <Link
+                            v-if="!isTakeQueuePage && !isTicketSuccessPage"
+                            :href="urls.home"
+                            class="text-xs font-semibold uppercase tracking-[0.35em] text-teal-700"
+                        >
                             Antrian BKPSDM
                         </Link>
-                        <h1 class="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl" :class="!isTakeQueuePage ? 'mt-3' : ''">{{ publicPage.title }}</h1>
-                        <p v-if="publicPage.subtitle" class="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">{{ publicPage.subtitle }}</p>
+                        <h1
+                            class="text-5xl font-black tracking-tight text-slate-950 sm:text-6xl lg:text-7xl"
+                            :class="!isTakeQueuePage ? 'mt-3' : ''"
+                        >
+                            {{ publicPage.title }}
+                        </h1>
+                        <p v-if="publicPage.subtitle" class="mt-4 max-w-3xl text-lg font-semibold leading-8 text-slate-900 sm:text-xl">
+                            {{ publicPage.subtitle }}
+                        </p>
                     </div>
 
-                    <div class="flex flex-wrap items-center gap-3">
-                        <Link
-                            v-if="showHeaderDashboard"
-                            :href="urls.dashboard"
-                            class="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-                        >
-                            Dashboard
-                        </Link>
-                    </div>
+                    <div class="flex flex-wrap items-center gap-3"></div>
                 </div>
             </header>
 

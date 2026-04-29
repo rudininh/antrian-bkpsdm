@@ -2,8 +2,10 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Queue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Carbon;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -30,6 +32,21 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $today = Carbon::today();
+        $waitingQuery = Queue::query()
+            ->with('service')
+            ->whereDate('queue_date', $today)
+            ->where('status', 'waiting');
+
+        $waitingCount = (clone $waitingQuery)->count();
+        $nextWaitingQueue = $waitingCount > 0
+            ? (clone $waitingQuery)->orderBy('queued_at')->first()
+            : null;
+        $nextWaitingMinutes = $nextWaitingQueue && $nextWaitingQueue->queued_at
+            ? max(0, $nextWaitingQueue->queued_at->diffInMinutes(now()))
+            : null;
+        $nextQueuedAtIso = $nextWaitingQueue?->queued_at?->toIso8601String();
+
         return [
             ...parent::share($request),
             'appName' => config('app.name'),
@@ -46,6 +63,18 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
             ],
+            'queueAlert' => [
+                'waitingCount' => $waitingCount,
+                'hasWaiting' => $waitingCount > 0,
+                'nextTicketNumber' => $nextWaitingQueue?->ticket_number,
+                'nextServiceName' => $nextWaitingQueue?->service?->name,
+                'nextQueuedAt' => $nextWaitingQueue?->queued_at?->format('H:i'),
+                'nextQueuedAtIso' => $nextQueuedAtIso,
+                'nextWaitingMinutes' => $nextWaitingMinutes,
+                'nextWaitingLabel' => $nextWaitingMinutes !== null
+                    ? $this->formatWaitingMinutes($nextWaitingMinutes)
+                    : null,
+            ],
             'urls' => [
                 'home' => Route::has('home') ? route('home') : '/',
                 'login' => Route::has('login') ? route('login') : '/login',
@@ -57,5 +86,18 @@ class HandleInertiaRequests extends Middleware
                 'logoKotaBanjarmasin' => rtrim($request->root(), '/').'/images/logo-kota-banjarmasin.png',
             ],
         ];
+    }
+
+    protected function formatWaitingMinutes(int $minutes): string
+    {
+        if ($minutes <= 0) {
+            return 'baru saja';
+        }
+
+        if ($minutes === 1) {
+            return '1 menit';
+        }
+
+        return $minutes.' menit';
     }
 }
