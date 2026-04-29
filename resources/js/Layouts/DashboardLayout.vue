@@ -2,10 +2,8 @@
 import { appRoute } from '@/utils/route';
 import DashboardHeader from '@/Components/dashboard/DashboardHeader.vue';
 import DashboardSidebar from '@/Components/dashboard/DashboardSidebar.vue';
-import QueueAlertBanner from '@/Components/dashboard/QueueAlertBanner.vue';
-import { queueAlertMuted, toggleQueueAlertMute, useQueueAlertVoice } from '@/composables/useQueueAlertVoice';
-import { Link, router, usePage } from '@inertiajs/vue3';
-import { computed, onBeforeUnmount, onMounted } from 'vue';
+import { Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 const props = defineProps({
     title: {
@@ -25,33 +23,12 @@ const props = defineProps({
 const page = usePage();
 const route = appRoute;
 const meta = computed(() => page.props.meta ?? {});
-const queueAlert = computed(() => page.props.queueAlert ?? {});
-const queueAlertCount = computed(() => Number(queueAlert.value.waitingCount ?? 0));
 const permissions = computed(() => page.props.permissions ?? {});
 const resolvedTitle = computed(() => props.title || meta.value.title || 'Dashboard');
 const resolvedDescription = computed(
     () => props.description || meta.value.description || 'Ringkasan operasional layanan hari ini.',
 );
 const resolvedDateLabel = computed(() => props.dateLabel || meta.value.dateLabel || '');
-let queueAlertTimer = null;
-useQueueAlertVoice(queueAlertCount);
-
-onMounted(() => {
-    queueAlertTimer = window.setInterval(() => {
-        router.reload({
-            only: ['queueAlert'],
-            preserveScroll: true,
-            preserveState: true,
-        });
-    }, 5000);
-});
-
-onBeforeUnmount(() => {
-    if (queueAlertTimer) {
-        window.clearInterval(queueAlertTimer);
-    }
-});
-
 const mobileNavItems = computed(() =>
     [
         { name: 'Dashboard', href: route('dashboard'), active: route().current('dashboard') },
@@ -85,14 +62,6 @@ const mobileNavItems = computed(() =>
                     :title="resolvedTitle"
                     :description="resolvedDescription"
                     :date-label="resolvedDateLabel"
-                    :queue-alert-muted="queueAlertMuted"
-                    @toggle-queue-alert-mute="toggleQueueAlertMute"
-                />
-
-                <QueueAlertBanner
-                    :queue-alert="queueAlert"
-                    :muted="queueAlertMuted"
-                    @toggle-mute="toggleQueueAlertMute"
                 />
 
                 <nav class="mt-4 flex gap-3 overflow-x-auto pb-2 lg:hidden">

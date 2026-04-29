@@ -18,13 +18,7 @@ defineProps({
         type: String,
         default: '',
     },
-    queueAlertMuted: {
-        type: Boolean,
-        default: false,
-    },
 });
-
-const emit = defineEmits(['toggle-queue-alert-mute']);
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user);
@@ -48,16 +42,6 @@ const user = computed(() => page.props.auth?.user);
                     <div class="font-semibold">Operator</div>
                     <div class="text-amber-700">{{ user?.name }}</div>
                 </div>
-                <button
-                    type="button"
-                    class="rounded-2xl px-4 py-3 text-left text-sm font-semibold transition"
-                    :class="queueAlertMuted ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-amber-100 text-amber-900 hover:bg-amber-200'"
-                    :aria-pressed="queueAlertMuted"
-                    @click="emit('toggle-queue-alert-mute')"
-                >
-                    <div class="font-semibold">Ada Antrian</div>
-                    <div>{{ queueAlertMuted ? 'OFF' : 'ON' }}</div>
-                </button>
                 <div class="flex items-center justify-center rounded-2xl bg-sky-50 px-4 py-3 text-sm text-sky-800">
                     <Link :href="route('public.queue.index')" class="font-semibold text-sky-900">Ke Ambil Nomor</Link>
                 </div>

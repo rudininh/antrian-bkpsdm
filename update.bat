@@ -278,8 +278,14 @@ echo [12/15] Memastikan symbolic link storage...
 echo Storage link dicek.
 echo.
 
-echo [13/15] Membersihkan cache Laravel...
+echo [13/15] Membersihkan dan membangun ulang cache Laravel...
 "%PHP_CMD%" artisan optimize:clear
+if errorlevel 1 goto :fail
+"%PHP_CMD%" artisan config:cache
+if errorlevel 1 goto :fail
+"%PHP_CMD%" artisan route:cache
+if errorlevel 1 goto :fail
+"%PHP_CMD%" artisan view:cache
 if errorlevel 1 goto :fail
 echo.
 
@@ -315,7 +321,7 @@ if "!REPO_ALREADY_UP_TO_DATE!"=="1" (
 echo - Dependency PHP dan Node.js sudah diperbarui
 echo - Migrasi database sudah dijalankan
 echo - Asset frontend sudah dibuild ulang
-echo - Cache Laravel sudah dibersihkan
+echo - Cache Laravel sudah dibangun ulang
 if "!LOCAL_CHANGES_DISCARDED!"=="1" (
     echo - Perubahan lokal yang tidak di-track sudah dibuang sebelum update
 )
