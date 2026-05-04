@@ -1,6 +1,7 @@
 <script setup>
 import PublicQueueLayout from '@/Layouts/PublicQueueLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
+import { clearServerIssue, reportServerIssue, serverIssueState } from '@/utils/serverIssue';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 defineOptions({
@@ -29,11 +30,19 @@ let timeoutId = null;
 let intervalId = null;
 
 const reloadWithFallback = () => {
+    if (serverIssueState.active) {
+        return;
+    }
+
     router.reload({
         only: ['liveCalls', 'summary'],
         preserveScroll: true,
+        preserveState: true,
         onError: () => {
-            window.location.reload();
+            reportServerIssue();
+        },
+        onSuccess: () => {
+            clearServerIssue();
         },
     });
 };
@@ -48,6 +57,10 @@ onMounted(() => {
     reloadWithFallback();
 
     timeoutId = window.setTimeout(() => {
+        if (serverIssueState.active) {
+            return;
+        }
+
         window.location.assign(page.props.urls.publicQueueIndex);
     }, 15000);
 });

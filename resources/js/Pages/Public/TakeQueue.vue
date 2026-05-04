@@ -2,6 +2,7 @@
 import Modal from '@/Components/Modal.vue';
 import PublicQueueLayout from '@/Layouts/PublicQueueLayout.vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
+import { clearServerIssue, reportServerIssue, serverIssueState } from '@/utils/serverIssue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 defineOptions({
@@ -91,11 +92,19 @@ const buildAnnouncementTexts = (call) => {
 };
 
 const reloadWithFallback = () => {
+    if (serverIssueState.active) {
+        return;
+    }
+
     router.reload({
         only: ['services', 'liveCalls', 'summary'],
         preserveScroll: true,
+        preserveState: true,
         onError: () => {
-            window.location.reload();
+            reportServerIssue();
+        },
+        onSuccess: () => {
+            clearServerIssue();
         },
     });
 };

@@ -1,6 +1,7 @@
 <script setup>
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
+import { clearServerIssue, reportServerIssue, serverIssueState } from '@/utils/serverIssue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 defineOptions({
@@ -38,6 +39,12 @@ const reloadStatus = () => {
     router.reload({
         preserveScroll: true,
         preserveState: true,
+        onError: () => {
+            reportServerIssue();
+        },
+        onSuccess: () => {
+            clearServerIssue();
+        },
     });
 };
 
@@ -47,6 +54,10 @@ const startPolling = () => {
     }
 
     pollTimer = window.setInterval(() => {
+        if (serverIssueState.active) {
+            return;
+        }
+
         reloadStatus();
     }, 5000);
 };

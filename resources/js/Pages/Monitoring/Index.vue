@@ -3,6 +3,7 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { acknowledgeQueueAnnouncements, queueAlertMuted, toggleQueueAlertMute } from '@/composables/useQueueAlertVoice';
+import { clearServerIssue, reportServerIssue, serverIssueState } from '@/utils/serverIssue';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { formatWaitingDuration } from '@/utils/queueTiming';
 
@@ -27,9 +28,20 @@ let clockId = null;
 
 onMounted(() => {
     intervalId = window.setInterval(() => {
+        if (serverIssueState.active) {
+            return;
+        }
+
         router.reload({
             only: ['summary', 'activeCalls', 'waitingQueues'],
             preserveScroll: true,
+            preserveState: true,
+            onError: () => {
+                reportServerIssue();
+            },
+            onSuccess: () => {
+                clearServerIssue();
+            },
         });
     }, 5000);
 

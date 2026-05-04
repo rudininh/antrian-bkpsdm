@@ -3,7 +3,6 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="refresh" content="2">
     <title>500 - Server Sedang Bermasalah</title>
     <style>
         :root {
@@ -154,7 +153,7 @@
 </head>
 <body>
     <main class="card">
-        <div class="badge">500 • Gangguan Sementara</div>
+        <div class="badge">500 &bull; Gangguan Sementara</div>
 
         <svg class="illustration" viewBox="0 0 120 120" fill="none" aria-hidden="true">
             <circle cx="60" cy="60" r="56" fill="#FEF3C7" />
@@ -165,13 +164,13 @@
 
         <h1>Server sedang mengalami gangguan.</h1>
         <p>
-            Aplikasi belum bisa merespons dengan normal. Halaman ini akan mencoba memuat ulang otomatis
-            setiap <strong>2 detik</strong> sampai layanan kembali berjalan.
+            Aplikasi belum bisa merespons dengan normal. Halaman ini tetap tampil stabil
+            sampai layanan kembali berjalan.
         </p>
 
         <section class="status-box">
             <strong>Status</strong>
-            <p>Jika Laragon, web server, database, atau proses deploy baru saja dijalankan ulang, tunggu sebentar. Browser akan mencoba kembali otomatis.</p>
+            <p>Jika Laragon, web server, database, atau proses deploy baru saja dijalankan ulang, tunggu sebentar lalu tekan tombol Coba Sekarang saat Anda siap.</p>
         </section>
 
         <div class="actions">
@@ -179,13 +178,7 @@
             <a href="{{ url('/') }}" class="button button-secondary">Kembali ke Beranda</a>
         </div>
 
-        <p class="hint">Tidak perlu refresh manual berulang kali. Biarkan halaman ini tetap terbuka.</p>
+        <p class="hint">Tidak ada refresh otomatis. Halaman ini aman dibiarkan terbuka sampai server pulih.</p>
     </main>
-
-    <script>
-        window.setTimeout(function () {
-            window.location.reload();
-        }, 2000);
-    </script>
 </body>
 </html>

@@ -216,8 +216,7 @@
                     <h1>Aplikasi sedang maintenance.</h1>
                     <p>
                         Tim sedang melakukan pembaruan atau layanan server masih dipersiapkan.
-                        Halaman ini akan mencoba memuat ulang otomatis setiap <strong>15 detik</strong>
-                        sampai aplikasi siap digunakan kembali.
+                        Halaman ini tetap diam tanpa refresh otomatis supaya proses pemulihan tidak terganggu.
                     </p>
                 </div>
             </div>
@@ -230,7 +229,7 @@
 
                 <section class="info-box">
                     <strong>Apa yang perlu dilakukan?</strong>
-                    <p>Tidak perlu menutup browser. Biarkan halaman tetap terbuka, nanti aplikasi akan mencoba masuk lagi otomatis.</p>
+                    <p>Tidak perlu menutup browser. Biarkan halaman tetap terbuka, lalu gunakan tombol Coba Sekarang saat layanan sudah siap.</p>
                 </section>
             </div>
 
@@ -244,11 +243,5 @@
             </div>
         </section>
     </main>
-
-    <script>
-        window.setTimeout(function () {
-            window.location.reload();
-        }, 15000);
-    </script>
 </body>
 </html>

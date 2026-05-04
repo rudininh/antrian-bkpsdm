@@ -4,6 +4,7 @@ import DashboardHeader from '@/Components/dashboard/DashboardHeader.vue';
 import DashboardSidebar from '@/Components/dashboard/DashboardSidebar.vue';
 import QueueAlertBanner from '@/Components/dashboard/QueueAlertBanner.vue';
 import { queueAlertMuted, toggleQueueAlertMute, useQueueAlertVoice } from '@/composables/useQueueAlertVoice';
+import { clearServerIssue, reportServerIssue, serverIssueState } from '@/utils/serverIssue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted } from 'vue';
 
@@ -38,10 +39,20 @@ useQueueAlertVoice(queueAlertCount);
 
 onMounted(() => {
     queueAlertTimer = window.setInterval(() => {
+        if (serverIssueState.active) {
+            return;
+        }
+
         router.reload({
             only: ['queueAlert'],
             preserveScroll: true,
             preserveState: true,
+            onError: () => {
+                reportServerIssue();
+            },
+            onSuccess: () => {
+                clearServerIssue();
+            },
         });
     }, 5000);
 });
