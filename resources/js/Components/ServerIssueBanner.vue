@@ -19,7 +19,7 @@ const emit = defineEmits(['retry']);
                         {{ message }}
                     </p>
                     <p class="mt-1 text-xs font-medium text-slate-500">
-                        Halaman ini tetap terbuka. Tidak ada refresh otomatis saat server belum pulih.
+                        Halaman ini tetap terbuka dan akan mencoba memuat ulang otomatis setiap 5 detik sampai server pulih.
                     </p>
                 </div>
 

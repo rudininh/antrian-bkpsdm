@@ -3,7 +3,7 @@ import './bootstrap';
 
 import { createInertiaApp } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
-import { createApp, h } from 'vue';
+import { createApp, h, onBeforeUnmount, watch } from 'vue';
 import ServerIssueBanner from '@/Components/ServerIssueBanner.vue';
 import { clearServerIssue, reportServerIssue, serverIssueState } from '@/utils/serverIssue';
 
@@ -20,6 +20,25 @@ createInertiaApp({
     setup({ el, App, props, plugin }) {
         const showServerIssue = (message = defaultServerIssueMessage) => {
             reportServerIssue(message);
+        };
+
+        let autoReloadTimer = null;
+
+        const stopAutoReload = () => {
+            if (autoReloadTimer !== null) {
+                window.clearInterval(autoReloadTimer);
+                autoReloadTimer = null;
+            }
+        };
+
+        const startAutoReload = () => {
+            stopAutoReload();
+
+            autoReloadTimer = window.setInterval(() => {
+                if (serverIssueState.active) {
+                    window.location.reload();
+                }
+            }, 5000);
         };
 
         document.addEventListener('inertia:invalid', (event) => {
@@ -40,21 +59,42 @@ createInertiaApp({
             clearServerIssue();
         });
 
-        return createApp({
-            render: () =>
-                h('div', [
-                    h(App, props),
-                    serverIssueState.active
-                        ? h(ServerIssueBanner, {
-                            message: serverIssueState.message || defaultServerIssueMessage,
-                            onRetry: () => {
-                                clearServerIssue();
-                                window.location.reload();
-                            },
-                        })
-                        : null,
-                ]),
-        })
+        const RootApp = {
+            setup() {
+                watch(
+                    () => serverIssueState.active,
+                    (isActive) => {
+                        if (isActive) {
+                            startAutoReload();
+                            return;
+                        }
+
+                        stopAutoReload();
+                    },
+                    { immediate: true },
+                );
+
+                onBeforeUnmount(() => {
+                    stopAutoReload();
+                });
+
+                return () =>
+                    h('div', [
+                        h(App, props),
+                        serverIssueState.active
+                            ? h(ServerIssueBanner, {
+                                message: serverIssueState.message || defaultServerIssueMessage,
+                                onRetry: () => {
+                                    clearServerIssue();
+                                    window.location.reload();
+                                },
+                            })
+                            : null,
+                    ]);
+            },
+        };
+
+        return createApp(RootApp)
             .use(plugin)
             .mount(el);
     },
