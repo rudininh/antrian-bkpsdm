@@ -231,7 +231,7 @@ class SystemUpdateController extends Controller
         $this->readLockData();
 
         $commands = [
-            'down' => ['artisan', 'down', '--render=errors::503', '--retry=60'],
+            'down' => ['artisan', 'down', '--retry=60'],
             'up' => ['artisan', 'up'],
             'optimize-clear' => ['artisan', 'optimize:clear'],
         ];
@@ -441,7 +441,7 @@ class SystemUpdateController extends Controller
 
         return implode(' && ', [
             'cd /d "'.$normalizedPath.'"',
-            'php artisan down --render=errors::503 --retry=60',
+            'php artisan down --retry=60',
             'git pull origin "'.$branch.'"',
             'composer install --no-interaction --prefer-dist --optimize-autoloader',
             'npm install',

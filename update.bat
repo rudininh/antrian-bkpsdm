@@ -227,7 +227,7 @@ echo [7/15] Mengaktifkan maintenance mode...
 if "!WAS_ALREADY_IN_MAINTENANCE!"=="1" (
     echo Maintenance mode sudah aktif dari awal. Langkah ini dilewati.
 ) else (
-    "%PHP_CMD%" artisan down --render="errors::503" --retry=60 >nul 2>nul
+    "%PHP_CMD%" artisan down --retry=60 >nul 2>nul
     if not errorlevel 1 (
         set "MAINTENANCE_ENABLED=1"
         echo Maintenance mode aktif.
