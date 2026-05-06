@@ -47,13 +47,6 @@ const isGuestBookSuccessScreen = computed(() => {
                         </div>
                     </div>
 
-                    <Link
-                        v-if="isGuestBookPage"
-                        :href="urls.dashboard"
-                        class="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-                    >
-                        Dashboard
-                    </Link>
                 </div>
             </section>
 
