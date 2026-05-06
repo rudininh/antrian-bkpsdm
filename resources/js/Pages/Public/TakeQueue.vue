@@ -226,9 +226,8 @@ onBeforeUnmount(() => {
             <div class="flex min-h-0 flex-1 flex-col rounded-[2rem] border border-white/70 bg-white/90 p-5 shadow-[0_30px_90px_-50px_rgba(15,23,42,0.55)] xl:overflow-hidden">
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p class="text-base font-black uppercase tracking-[0.24em] text-teal-800 sm:text-lg">Ambil Nomor</p>
                         <h2 class="mt-2 text-2xl font-black leading-tight text-slate-950 sm:text-3xl lg:text-4xl">
-                            Pilih kelompok layanan lalu terbitkan nomor otomatis.
+                            Pilih layanan untuk ambil nomor.
                         </h2>
                     </div>
                 </div>
@@ -237,7 +236,6 @@ onBeforeUnmount(() => {
                     <div class="rounded-[1.8rem] border border-slate-200 bg-[linear-gradient(145deg,_rgba(255,255,255,0.94),_rgba(240,253,250,0.98))] p-5 shadow-[0_24px_70px_-50px_rgba(15,23,42,0.5)]">
                         <div class="flex flex-col gap-4">
                             <div>
-                                <p class="text-sm font-black uppercase tracking-[0.28em] text-slate-700">Pilihan Layanan</p>
                                 <template v-if="selectedService">
                                     <div class="mt-3 flex items-center gap-3">
                                         <span class="rounded-full bg-slate-950 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-white">
@@ -245,7 +243,6 @@ onBeforeUnmount(() => {
                                         </span>
                                         <h3 class="text-3xl font-black text-slate-950 sm:text-4xl">{{ selectedService.groupTitle }}</h3>
                                     </div>
-                                    <p class="mt-4 text-base font-semibold leading-7 text-slate-800">{{ selectedService.description }}</p>
                                     <div class="mt-4 flex flex-wrap gap-2">
                                         <span
                                             v-for="item in selectedService.items"
@@ -266,23 +263,16 @@ onBeforeUnmount(() => {
 
                             <button
                                 type="button"
-                                class="inline-flex w-full items-center justify-center rounded-[1rem] border border-slate-950 bg-white px-6 py-5 text-lg font-black text-slate-950 transition hover:bg-slate-50"
+                                class="inline-flex w-full items-center justify-center rounded-[1rem] px-6 py-5 text-xl font-black tracking-[0.08em] text-black transition-transform duration-200 active:scale-[0.985]"
+                                :class="selectedService
+                                    ? 'border border-slate-950 bg-white hover:bg-slate-50'
+                                    : 'cyberpunk-service-button border border-transparent bg-white'"
                                 @click="servicePickerOpen = true"
                             >
-                                {{ selectedService ? 'Ubah Layanan' : 'Pilih Layanan' }}
+                                <span class="relative z-10">{{ selectedService ? 'Ubah Layanan' : 'Pilih Layanan' }}</span>
                             </button>
                         </div>
 
-                        <div class="mt-5 grid gap-3 sm:grid-cols-2">
-                            <div class="rounded-[1.25rem] bg-slate-100 px-4 py-4">
-                                <div class="text-base font-bold text-slate-700">Dalam antrean</div>
-                                <div class="mt-1 text-3xl font-black text-slate-950">{{ selectedService?.waitingCount ?? 0 }}</div>
-                            </div>
-                            <div class="rounded-[1.25rem] bg-emerald-50 px-4 py-4">
-                                <div class="text-base font-bold text-emerald-800">Sedang dipanggil</div>
-                                <div class="mt-1 text-3xl font-black text-emerald-900">{{ selectedService?.calledCount ?? 0 }}</div>
-                            </div>
-                        </div>
                     </div>
 
                     <p v-if="form.errors.service_code" class="text-sm font-medium text-rose-600">{{ form.errors.service_code }}</p>
@@ -435,3 +425,117 @@ onBeforeUnmount(() => {
         </div>
     </Modal>
 </template>
+
+<style scoped>
+.cyberpunk-service-button {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(236, 254, 255, 0.98)) padding-box,
+        linear-gradient(
+            120deg,
+            rgb(20, 184, 166) 0%,
+            rgb(14, 165, 233) 35%,
+            rgb(59, 130, 246) 68%,
+            rgb(20, 184, 166) 100%
+        ) border-box;
+    background-size: 100% 100%, 300% 300%;
+    border-width: 2px;
+    box-shadow:
+        0 0 0 1px rgba(15, 23, 42, 0.08),
+        0 0 14px rgba(20, 184, 166, 0.18),
+        0 0 24px rgba(14, 165, 233, 0.12),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    animation:
+        cyberpunk-border-flow 3.2s ease-in-out infinite,
+        cyberpunk-pulse 2.8s ease-in-out infinite;
+}
+
+.cyberpunk-service-button:hover {
+    box-shadow:
+        0 0 0 1px rgba(15, 23, 42, 0.1),
+        0 0 18px rgba(20, 184, 166, 0.24),
+        0 0 32px rgba(14, 165, 233, 0.18),
+        inset 0 0 18px rgba(255, 255, 255, 0.04);
+    filter: saturate(1.08) brightness(1.02);
+}
+
+.cyberpunk-service-button:hover::before {
+    opacity: 1;
+}
+
+.cyberpunk-service-button::before {
+    content: '';
+    position: absolute;
+    inset: -12px;
+    border-radius: inherit;
+    background: linear-gradient(
+        90deg,
+        rgba(20, 184, 166, 0.34),
+        rgba(14, 165, 233, 0.28),
+        rgba(59, 130, 246, 0.22),
+        rgba(20, 184, 166, 0.34)
+    );
+    background-size: 300% 300%;
+    filter: blur(16px);
+    opacity: 0.42;
+    z-index: -1;
+    animation: cyberpunk-border-flow 3.2s ease-in-out infinite;
+}
+
+.cyberpunk-service-button::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border-radius: calc(1rem - 2px);
+    background:
+        linear-gradient(180deg, rgba(20, 184, 166, 0.06), rgba(255, 255, 255, 0.02)),
+        repeating-linear-gradient(
+            180deg,
+            rgba(14, 165, 233, 0.06) 0 2px,
+            rgba(255, 255, 255, 0) 2px 7px
+        );
+    mix-blend-mode: screen;
+    opacity: 0.28;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes cyberpunk-border-flow {
+    0% {
+        background-position: 0 0, 0% 50%;
+        box-shadow:
+            0 0 0 1px rgba(15, 23, 42, 0.08),
+            0 0 14px rgba(20, 184, 166, 0.18),
+            0 0 24px rgba(14, 165, 233, 0.12),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
+    50% {
+        background-position: 0 0, 100% 50%;
+        box-shadow:
+            0 0 0 1px rgba(15, 23, 42, 0.1),
+            0 0 18px rgba(20, 184, 166, 0.24),
+            0 0 32px rgba(14, 165, 233, 0.18),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+    100% {
+        background-position: 0 0, 0% 50%;
+        box-shadow:
+            0 0 0 1px rgba(15, 23, 42, 0.08),
+            0 0 14px rgba(20, 184, 166, 0.18),
+            0 0 24px rgba(14, 165, 233, 0.12),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    }
+}
+
+@keyframes cyberpunk-pulse {
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-1px) scale(1.005);
+    }
+}
+</style>

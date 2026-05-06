@@ -41,7 +41,7 @@ const isGuestBookSuccessScreen = computed(() => {
                         </div>
                         <div>
                             <p class="text-sm font-semibold uppercase tracking-[0.28em] text-teal-800">Pemerintah Kota Banjarmasin</p>
-                            <h2 class="mt-2 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
+                            <h2 class="mt-2 text-xl font-black tracking-tight text-slate-950 sm:text-2xl lg:text-3xl">
                                 Badan Kepegawaian dan Pengembangan Sumber Daya Manusia Kota Banjarmasin
                             </h2>
                         </div>
