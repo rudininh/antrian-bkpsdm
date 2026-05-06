@@ -87,7 +87,7 @@ const buildAnnouncementTexts = (call) => {
     return [
         `Nomor antrian ${ticketNumber}, silakan menuju ${counterName}. Saya ulangi, nomor antrian ${ticketNumber}, silakan menuju ${counterName}.`,
         `Perhatian pian sabarataan, antrian nomor ${ticketNumber} dipanggil gasan datang ka ${counterName}. Ulun handak manyampaikan sakali lagi, antrian nomor ${ticketNumber}, silakan langsung bejalan ka ${counterName} gasan dilayani petugas. Nang mamagang nomor ${ticketNumber}, jangan sampai kada tatangar, langsung haja ka ${counterName} wayah ini jua.`,
-        `Attention please, ticket number ${ticketNumber}, kindly make your way to ${counterName}. I repeat, ticket number ${ticketNumber}, please proceed to ${counterName} now for assistance. If you are holding ticket number ${ticketNumber}, our staff are ready to serve you at ${counterName}.`,
+        `Nomor antrian ${ticketNumber} dipanggil ke ${counterName}. Mohon segera menuju ${counterName}. Saya ulangi, nomor antrian ${ticketNumber} dipanggil ke ${counterName}.`,
     ];
 };
 
@@ -116,7 +116,6 @@ const speakCall = (call) => {
 
     const voices = window.speechSynthesis.getVoices();
     const indonesianVoice = voices.find((voice) => voice.lang?.toLowerCase().startsWith('id'));
-    const britishVoice = voices.find((voice) => voice.lang?.toLowerCase().startsWith('en-gb'));
     const announcementQueue = buildAnnouncementTexts(call);
 
     window.speechSynthesis.cancel();
@@ -128,8 +127,8 @@ const speakCall = (call) => {
 
         const utterance = new SpeechSynthesisUtterance(announcementQueue[index]);
 
-        utterance.lang = index === 2 ? (britishVoice?.lang ?? 'en-GB') : (indonesianVoice?.lang ?? 'id-ID');
-        utterance.voice = index === 2 ? (britishVoice ?? null) : (indonesianVoice ?? null);
+        utterance.lang = indonesianVoice?.lang ?? 'id-ID';
+        utterance.voice = indonesianVoice ?? null;
         utterance.rate = index === 0 ? 0.92 : index === 1 ? 0.88 : 0.9;
         utterance.pitch = 1;
         utterance.volume = 1;
