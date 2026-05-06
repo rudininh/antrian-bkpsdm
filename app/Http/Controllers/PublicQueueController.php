@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Call;
 use App\Models\Queue;
 use App\Models\Service;
+use App\Support\QueueStatusPromoter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -16,9 +17,15 @@ use Inertia\Response;
 
 class PublicQueueController extends Controller
 {
+    public function __construct(
+        protected QueueStatusPromoter $queueStatusPromoter,
+    ) {
+    }
+
     public function index(): Response
     {
         $today = Carbon::today();
+        $this->queueStatusPromoter->promoteQueueLifecycle();
 
         return Inertia::render('Public/TakeQueue', [
             'publicPage' => [
@@ -62,6 +69,7 @@ class PublicQueueController extends Controller
         $queue->loadMissing('service');
 
         $today = Carbon::parse($queue->queue_date ?? $queue->queued_at ?? now())->startOfDay();
+        $this->queueStatusPromoter->promoteQueueLifecycle();
         $queuesAhead = Queue::query()
             ->where('service_id', $queue->service_id)
             ->whereDate('queue_date', $queue->queue_date)

@@ -74,6 +74,7 @@ const enableSound = async () => {
 
     await unlockSpeech();
     soundEnabled.value = true;
+    maybeAnnounceLatestCall(props.liveCalls);
 };
 
 const enableSoundOnInteraction = () => {
@@ -111,7 +112,7 @@ const reloadWithFallback = () => {
 
 const speakCall = (call) => {
     if (!speechSupported || !call || !soundEnabled.value) {
-        return;
+        return false;
     }
 
     const voices = window.speechSynthesis.getVoices();
@@ -138,6 +139,7 @@ const speakCall = (call) => {
     };
 
     speakNext();
+    return true;
 };
 
 const maybeAnnounceLatestCall = (calls) => {
@@ -153,8 +155,9 @@ const maybeAnnounceLatestCall = (calls) => {
         return;
     }
 
-    spokenCallSignature = signature;
-    speakCall(latestCall);
+    if (speakCall(latestCall)) {
+        spokenCallSignature = signature;
+    }
 };
 
 onMounted(() => {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Call;
 use App\Models\Counter;
 use App\Models\Queue;
+use App\Support\QueueStatusPromoter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -12,9 +13,15 @@ use Inertia\Response;
 
 class MonitoringController extends Controller
 {
+    public function __construct(
+        protected QueueStatusPromoter $queueStatusPromoter,
+    ) {
+    }
+
     public function index(): Response
     {
         $today = Carbon::today();
+        $this->queueStatusPromoter->promoteQueueLifecycle();
 
         $activeCalls = Call::query()
             ->with(['queue.service', 'counter'])

@@ -83,6 +83,13 @@ const statusClasses = {
     completed: 'bg-slate-200 text-slate-700',
     skipped: 'bg-rose-100 text-rose-700',
 };
+
+const statusLabels = {
+    called: 'Dipanggil',
+    serving: 'Proses',
+    completed: 'Selesai',
+    skipped: 'Dilewati',
+};
 </script>
 
 <template>
@@ -168,7 +175,7 @@ const statusClasses = {
 
                             <div class="flex shrink-0 flex-wrap gap-3 lg:justify-end">
                                 <span class="rounded-full px-3 py-1 text-xs font-semibold" :class="statusClasses[call.status] ?? 'bg-slate-100 text-slate-700'">
-                                    {{ call.status }}
+                                    {{ statusLabels[call.status] ?? call.status }}
                                 </span>
                             </div>
                         </div>

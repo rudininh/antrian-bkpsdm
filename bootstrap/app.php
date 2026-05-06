@@ -15,7 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'pengaturan/update-server*',
         ]);
 
+        $middleware->alias([
+            'auth' => \App\Http\Middleware\TrustedAuthenticate::class,
+        ]);
+
         $middleware->web(append: [
+            \App\Http\Middleware\AutoLoginTrustedServer::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
