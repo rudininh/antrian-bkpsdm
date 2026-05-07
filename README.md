@@ -1,58 +1,198 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Antrian BKPSDM
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Sistem informasi antrian dan layanan BKPSDM berbasis web yang dibangun dengan Laravel, Inertia, dan Vue. Aplikasi ini mendukung pengambilan antrian publik, buku tamu, monitoring pelayanan, laporan, dan pengelolaan data master dalam satu platform.
 
-## About Laravel
+## Ringkasan
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Proyek ini dirancang untuk membantu proses pelayanan agar lebih tertata, terpantau, dan mudah dioperasikan. Pengguna publik dapat mengambil antrian dari halaman depan, sementara petugas dapat memantau proses layanan melalui dashboard internal.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Fitur Utama
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- Pengambilan antrian untuk pengguna publik
+- Buku tamu kiosk untuk pencatatan kunjungan
+- Halaman monitor publik untuk menampilkan status antrian
+- Dashboard internal untuk petugas
+- Monitoring antrian: panggil, panggil ulang, mulai, selesai, dan lewati
+- Manajemen data layanan
+- Laporan antrian dengan ekspor PDF dan Excel
+- Pengaturan dan utilitas sistem
+- Autentikasi dan otorisasi berbasis middleware
 
-## Learning Laravel
+## Tech Stack
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+| Layer | Teknologi |
+| --- | --- |
+| Backend | PHP 8.3, Laravel 13 |
+| Frontend | Vue 3, Inertia.js |
+| Styling | Tailwind CSS, @tailwindcss/forms |
+| Build Tool | Vite |
+| Database | MySQL, database-backed queue/session/cache |
+| Auth | Laravel Breeze, Sanctum |
+| Export | barryvdh/laravel-dompdf |
+| Routing Helper | Ziggy |
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Prasyarat
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+- PHP 8.3 atau lebih baru
+- Composer
+- Node.js 18+ dan npm
+- MySQL
+- Web server lokal seperti Laragon, XAMPP, atau Laravel Sail sesuai kebutuhan
 
-## Agentic Development
+## Instalasi
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+1. Clone repository ini.
+2. Jalankan instalasi dependency PHP dan JavaScript:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+npm install
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+3. Salin file environment:
 
-## Contributing
+```bash
+cp .env.example .env
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+4. Sesuaikan konfigurasi database di file `.env`.
 
-## Code of Conduct
+5. Generate application key:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+php artisan key:generate
+```
 
-## Security Vulnerabilities
+6. Jalankan migrasi database:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+php artisan migrate
+```
+
+7. Build asset frontend:
+
+```bash
+npm run build
+```
+
+Jika ingin menjalankan instalasi awal yang lebih cepat, proyek ini juga menyediakan:
+
+```bash
+composer run setup
+```
+
+Catatan: pada Windows PowerShell, perintah salin file environment dapat diganti dengan:
+
+```bash
+Copy-Item .env.example .env
+```
+
+## Menjalankan Project
+
+### Mode development
+
+Jalankan semua service penting sekaligus:
+
+```bash
+composer run dev
+```
+
+Perintah ini akan menjalankan server Laravel, queue listener, log viewer, dan Vite dev server.
+
+### Jalankan manual
+
+Jika ingin menjalankan per service:
+
+```bash
+php artisan serve
+npm run dev
+php artisan queue:listen
+```
+
+## Struktur Folder
+
+```text
+app/
+  Http/
+    Controllers/
+    Middleware/
+    Requests/
+  Models/
+  Providers/
+  Support/
+bootstrap/
+config/
+database/
+  factories/
+  migrations/
+  seeders/
+public/
+resources/
+  css/
+  js/
+    Components/
+    composables/
+    Layouts/
+    Pages/
+    utils/
+  views/
+routes/
+storage/
+```
+
+## Alur Halaman
+
+- `/` dan `/ambil-antrian` untuk halaman antrian publik
+- `/buku-tamu` untuk kiosk buku tamu
+- `/monitor-publik` untuk tampilan monitor publik
+- `/dashboard` untuk dashboard internal
+- `/antrian` untuk manajemen antrian
+- `/monitoring` untuk operasional antrian
+- `/laporan` untuk rekap dan ekspor laporan
+- `/layanan` untuk data layanan
+- `/pengaturan/update-server` untuk utilitas pembaruan sistem
+
+## Konfigurasi Environment
+
+Contoh konfigurasi utama di `.env`:
+
+```env
+APP_NAME="Antrian BKPSDM"
+APP_URL=http://localhost/antrian-bkpsdm/public
+APP_TIMEZONE=Asia/Makassar
+APP_LOCALE=id
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=antrian_bkpsdm
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Pastikan database sudah dibuat sebelum menjalankan migrasi.
+
+## Script Composer
+
+- `composer run dev` menjalankan stack development lengkap
+- `composer run test` membersihkan config dan menjalankan test
+- `composer setup` menyiapkan instalasi awal proyek
+
+## Testing
+
+Jalankan test suite dengan:
+
+```bash
+composer run test
+```
+
+## Catatan Deploy
+
+- Pastikan `APP_ENV=production` dan `APP_DEBUG=false` di server produksi
+- Jalankan `php artisan migrate --force`
+- Build asset frontend dengan `npm run build`
+- Pastikan queue worker aktif jika fitur antrian dan proses latar belakang digunakan
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Proyek ini mengikuti lisensi MIT, kecuali ada ketentuan lain dari pemilik repository.
