@@ -17,6 +17,8 @@ class ConfirmablePasswordController extends Controller
      */
     public function show(): Response
     {
+        abort_unless(config('auth.login_enabled'), 404);
+
         return Inertia::render('Auth/ConfirmPassword');
     }
 
@@ -25,6 +27,8 @@ class ConfirmablePasswordController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        abort_unless(config('auth.login_enabled'), 404);
+
         if (! Auth::guard('web')->validate([
             'email' => $request->user()->email,
             'password' => $request->password,

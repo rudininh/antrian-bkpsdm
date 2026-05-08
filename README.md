@@ -81,6 +81,38 @@ Jika ingin menjalankan instalasi awal yang lebih cepat, proyek ini juga menyedia
 composer run setup
 ```
 
+## Akun Login Default
+
+Setelah menjalankan seeder, tersedia akun bawaan berikut:
+
+- Admin: `admin@bkpsdm.test`
+- Operator: `operator@bkpsdm.test`
+- Password: `password`
+
+Jika muncul pesan `Kredensial yang dimasukkan tidak cocok dengan data kami.`, biasanya berarti email belum sesuai, password salah, atau data user belum di-seed ke database.
+
+## Auto Login Trusted Server
+
+Aplikasi ini juga mendukung auto-login saat host masuk ke daftar trusted server.
+
+- Default host trusted: `desktop-904qfme`
+- Email user trusted default: `admin@bkpsdm.test`
+
+Pengaturannya bisa diubah lewat environment:
+
+```env
+TRUSTED_SERVER_HOSTS=desktop-904qfme
+TRUSTED_SERVER_USER_EMAIL=admin@bkpsdm.test
+```
+
+Kalau ingin mematikan login manual sementara, tambahkan ini ke `.env`:
+
+```env
+AUTH_LOGIN_ENABLED=false
+```
+
+Balikkan ke `true` saat fitur login mau dipakai lagi.
+
 Catatan: pada Windows PowerShell, perintah salin file environment dapat diganti dengan:
 
 ```bash

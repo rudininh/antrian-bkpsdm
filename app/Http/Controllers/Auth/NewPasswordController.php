@@ -21,6 +21,8 @@ class NewPasswordController extends Controller
      */
     public function create(Request $request): Response
     {
+        abort_unless(config('auth.login_enabled'), 404);
+
         return Inertia::render('Auth/ResetPassword', [
             'email' => $request->email,
             'token' => $request->route('token'),
@@ -34,6 +36,8 @@ class NewPasswordController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        abort_unless(config('auth.login_enabled'), 404);
+
         $request->validate([
             'token' => 'required',
             'email' => 'required|email',
@@ -59,7 +63,7 @@ class NewPasswordController extends Controller
         // the application's home authenticated view. If there is an error we can
         // redirect them back to where they came from with their error message.
         if ($status == Password::PASSWORD_RESET) {
-            return redirect()->route('login')->with('status', __($status));
+            return redirect()->route('home')->with('status', __($status));
         }
 
         throw ValidationException::withMessages([

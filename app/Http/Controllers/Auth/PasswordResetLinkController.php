@@ -17,6 +17,8 @@ class PasswordResetLinkController extends Controller
      */
     public function create(): Response
     {
+        abort_unless(config('auth.login_enabled'), 404);
+
         return Inertia::render('Auth/ForgotPassword', [
             'status' => session('status'),
         ]);
@@ -29,6 +31,8 @@ class PasswordResetLinkController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
+        abort_unless(config('auth.login_enabled'), 404);
+
         $request->validate([
             'email' => 'required|email',
         ]);

@@ -20,6 +20,8 @@ return [
         'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
     ],
 
+    'login_enabled' => env('AUTH_LOGIN_ENABLED', true),
+
     /*
     |--------------------------------------------------------------------------
     | Authentication Guards

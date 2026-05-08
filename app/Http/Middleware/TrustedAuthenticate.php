@@ -18,6 +18,15 @@ class TrustedAuthenticate extends Middleware
         return parent::handle($request, $next, ...$guards);
     }
 
+    protected function redirectTo(Request $request): ?string
+    {
+        if (! config('auth.login_enabled')) {
+            return route('home', absolute: false);
+        }
+
+        return route('login', absolute: false);
+    }
+
     protected function loginTrustedServerUser(Request $request): void
     {
         if ($request->user()) {
