@@ -44,10 +44,10 @@ const user = computed(() => page.props.auth?.user);
                     <div class="font-semibold">Tanggal Operasional</div>
                     <div class="text-teal-700">{{ dateLabel }}</div>
                 </div>
-            <div class="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                <div class="font-semibold">{{ user ? 'Operator' : 'Mode Publik' }}</div>
-                <div class="text-amber-700">{{ user?.name ?? 'Tanpa login' }}</div>
-            </div>
+                <div class="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <div class="font-semibold">{{ user ? 'Operator' : 'Mode Publik' }}</div>
+                    <div class="text-amber-700">{{ user?.name ?? 'Tanpa login' }}</div>
+                </div>
                 <button
                     v-if="user"
                     type="button"
@@ -69,13 +69,19 @@ const user = computed(() => page.props.auth?.user);
                 <div class="flex items-center justify-center rounded-2xl bg-teal-50 px-4 py-3 text-sm text-teal-800">
                     <Link :href="route('public.guest-book.kiosk')" class="font-semibold text-teal-900">Ke Buku Tamu</Link>
                 </div>
-                <div v-if="user" class="flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
-                    <Link :href="route('profile.edit')" class="font-semibold text-slate-900">Profil</Link>
-                    <span>/</span>
-                    <Link :href="route('logout')" method="post" as="button" class="font-semibold text-rose-600">Keluar</Link>
-                </div>
-                <div v-else class="flex items-center justify-center rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
-                    <Link :href="route('login')" class="font-semibold text-slate-900">Login Operator</Link>
+                <div class="flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
+                    <template v-if="user">
+                        <Link :href="route('profile.edit')" class="font-semibold text-slate-900">Profil</Link>
+                        <span>/</span>
+                        <Link :href="route('logout')" method="post" as="button" class="font-semibold text-rose-600">Keluar</Link>
+                    </template>
+                    <Link
+                        v-else
+                        :href="route('login')"
+                        class="font-semibold text-slate-900"
+                    >
+                        Login Operator
+                    </Link>
                 </div>
             </div>
         </div>

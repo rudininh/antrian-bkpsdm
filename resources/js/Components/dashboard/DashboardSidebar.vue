@@ -9,6 +9,7 @@ const route = appRoute;
 const appName = computed(() => page.props.appName ?? 'Antrian BKPSDM');
 const user = computed(() => page.props.auth?.user);
 const permissions = computed(() => page.props.permissions ?? {});
+const loginEnabled = computed(() => page.props.loginEnabled ?? true);
 
 const navItems = computed(() => {
     if (!user.value) {
@@ -76,9 +77,9 @@ const navItems = computed(() => {
 
             <div v-if="user" class="rounded-3xl border border-white/10 bg-white/5 p-5">
                 <p class="text-xs uppercase tracking-[0.25em] text-slate-400">Login Aktif</p>
-                <p class="mt-2 text-lg font-semibold text-white">{{ user?.name }}</p>
-                <p class="text-sm text-slate-300">{{ user?.email }}</p>
-                <p class="mt-2 text-xs uppercase tracking-[0.25em] text-teal-300">{{ user?.role }}</p>
+                <p class="mt-2 text-lg font-semibold text-white">{{ user?.name ?? 'Guest Mode' }}</p>
+                <p class="text-sm text-slate-300">{{ user?.email ?? 'Akses panel tanpa login' }}</p>
+                <p class="mt-2 text-xs uppercase tracking-[0.25em] text-teal-300">{{ user?.role ?? (loginEnabled ? 'Guest' : 'Guest Mode') }}</p>
                 <div class="mt-4 flex flex-col gap-2">
                     <Link
                         :href="route('public.queue.index')"
@@ -93,6 +94,7 @@ const navItems = computed(() => {
                         Buka Buku Tamu
                     </Link>
                     <Link
+                        v-if="user"
                         :href="route('logout')"
                         method="post"
                         as="button"

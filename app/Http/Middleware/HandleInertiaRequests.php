@@ -32,6 +32,7 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $loginEnabled = config('auth.login_enabled');
         $today = Carbon::today();
         $waitingQuery = Queue::query()
             ->with('service')
@@ -50,14 +51,15 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'appName' => config('app.name'),
+            'loginEnabled' => $loginEnabled,
             'auth' => [
-                'user' => $request->user()?->only('id', 'name', 'email', 'role'),
+                'user' => $loginEnabled ? $request->user()?->only('id', 'name', 'email', 'role') : null,
             ],
             'permissions' => [
-                'manageMasterData' => $request->user()?->can('manage-master-data') ?? false,
-                'manageQueues' => $request->user()?->can('manage-queues') ?? false,
-                'manageSystem' => $request->user()?->can('manage-system') ?? false,
-                'manageReports' => $request->user()?->can('manage-reports') ?? false,
+                'manageMasterData' => $loginEnabled ? ($request->user()?->can('manage-master-data') ?? false) : true,
+                'manageQueues' => $loginEnabled ? ($request->user()?->can('manage-queues') ?? false) : true,
+                'manageSystem' => $loginEnabled ? ($request->user()?->can('manage-system') ?? false) : true,
+                'manageReports' => $loginEnabled ? ($request->user()?->can('manage-reports') ?? false) : true,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

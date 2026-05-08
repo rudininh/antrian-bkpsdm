@@ -111,7 +111,7 @@ Kalau ingin mematikan login manual sementara, tambahkan ini ke `.env`:
 AUTH_LOGIN_ENABLED=false
 ```
 
-Balikkan ke `true` saat fitur login mau dipakai lagi.
+Balikkan ke `true` saat fitur login mau dipakai lagi. Saat mode ini aktif, halaman internal seperti dashboard, layanan, antrian, laporan, dan pengaturan server tetap bisa dibuka tanpa login.
 
 Catatan: pada Windows PowerShell, perintah salin file environment dapat diganti dengan:
 

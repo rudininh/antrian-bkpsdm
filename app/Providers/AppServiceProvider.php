@@ -22,6 +22,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (! config('auth.login_enabled')) {
+            Gate::before(fn () => true);
+
+            Vite::prefetch(concurrency: 3);
+
+            return;
+        }
+
         Gate::define('manage-master-data', fn (User $user) => $user->isAdmin());
         Gate::define('manage-queues', fn (User $user) => $user->isAdmin() || $user->isOperator());
         Gate::define('manage-system', fn (User $user) => $user->isAdmin() || $user->isOperator());
