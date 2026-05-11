@@ -1,5 +1,5 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { formatWaitingDuration } from '@/utils/queueTiming';
 
@@ -16,6 +16,8 @@ const props = defineProps({
 
 const emit = defineEmits(['toggle-mute']);
 
+const page = usePage();
+const isAuthenticated = computed(() => Boolean(page.props.auth?.user));
 const hasWaiting = computed(() => Number(props.queueAlert?.waitingCount ?? 0) > 0);
 const now = ref(Date.now());
 let clockId = null;
@@ -84,6 +86,7 @@ const liveWaitingLabel = computed(() =>
                     </div>
 
                     <button
+                        v-if="isAuthenticated"
                         type="button"
                         class="inline-flex items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold transition"
                         :class="muted ? 'border-slate-300 bg-slate-100 text-slate-700 hover:bg-slate-200' : 'border-amber-200 bg-amber-100 text-amber-800 hover:bg-amber-200'"
@@ -93,6 +96,11 @@ const liveWaitingLabel = computed(() =>
                         <span v-if="muted">Aktifkan Suara</span>
                         <span v-else>Mute Suara</span>
                     </button>
+
+                    <div v-else class="rounded-2xl bg-sky-50 px-4 py-3 text-sm text-sky-900">
+                        <div class="font-semibold">Mode Publik</div>
+                        <div class="text-sky-700">Kontrol suara disembunyikan.</div>
+                    </div>
 
                     <Link
                         :href="route('monitoring.index')"

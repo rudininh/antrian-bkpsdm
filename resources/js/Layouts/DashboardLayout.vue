@@ -29,6 +29,7 @@ const meta = computed(() => page.props.meta ?? {});
 const queueAlert = computed(() => page.props.queueAlert ?? {});
 const queueAlertCount = computed(() => Number(queueAlert.value.waitingCount ?? 0));
 const permissions = computed(() => page.props.permissions ?? {});
+const isAuthenticated = computed(() => Boolean(page.props.auth?.user));
 const resolvedTitle = computed(() => props.title || meta.value.title || 'Dashboard');
 const resolvedDescription = computed(
     () => props.description || meta.value.description || 'Ringkasan operasional layanan hari ini.',
@@ -63,8 +64,17 @@ onBeforeUnmount(() => {
     }
 });
 
-const mobileNavItems = computed(() =>
-    [
+const mobileNavItems = computed(() => {
+    if (!isAuthenticated.value) {
+        return [
+            { name: 'Panggilan', href: route('monitoring.index'), active: route().current('monitoring.*') },
+            { name: 'Ambil Nomor', href: route('public.queue.index'), active: route().current('public.queue.*') || route().current('public.monitor') },
+            { name: 'Buku Tamu', href: route('public.guest-book.kiosk'), active: route().current('public.guest-book.kiosk*') },
+            { name: 'Login', href: route('login'), active: route().current('login') },
+        ];
+    }
+
+    return [
         { name: 'Dashboard', href: route('dashboard'), active: route().current('dashboard') },
         permissions.value.manageMasterData
             ? { name: 'Layanan', href: route('services.index'), active: route().current('services.*') }
@@ -82,8 +92,8 @@ const mobileNavItems = computed(() =>
             ? { name: 'Laporan', href: route('reports.index'), active: route().current('reports.*') }
             : null,
         { name: 'Profil', href: route('profile.edit'), active: route().current('profile.*') },
-    ].filter(Boolean),
-);
+    ].filter(Boolean);
+});
 </script>
 
 <template>

@@ -44,11 +44,12 @@ const user = computed(() => page.props.auth?.user);
                     <div class="font-semibold">Tanggal Operasional</div>
                     <div class="text-teal-700">{{ dateLabel }}</div>
                 </div>
-                <div class="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                    <div class="font-semibold">Operator</div>
-                    <div class="text-amber-700">{{ user?.name }}</div>
-                </div>
+            <div class="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <div class="font-semibold">{{ user ? 'Operator' : 'Mode Publik' }}</div>
+                <div class="text-amber-700">{{ user?.name ?? 'Tanpa login' }}</div>
+            </div>
                 <button
+                    v-if="user"
                     type="button"
                     class="rounded-2xl px-4 py-3 text-left text-sm font-semibold transition"
                     :class="queueAlertMuted ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-amber-100 text-amber-900 hover:bg-amber-200'"
@@ -58,16 +59,23 @@ const user = computed(() => page.props.auth?.user);
                     <div class="font-semibold">Ada Antrian</div>
                     <div>{{ queueAlertMuted ? 'OFF' : 'ON' }}</div>
                 </button>
+                <div v-else class="rounded-2xl bg-sky-50 px-4 py-3 text-sm text-sky-900">
+                    <div class="font-semibold">Akses Publik</div>
+                    <div class="text-sky-700">Kontrol panggilan tersedia.</div>
+                </div>
                 <div class="flex items-center justify-center rounded-2xl bg-sky-50 px-4 py-3 text-sm text-sky-800">
                     <Link :href="route('public.queue.index')" class="font-semibold text-sky-900">Ke Ambil Nomor</Link>
                 </div>
                 <div class="flex items-center justify-center rounded-2xl bg-teal-50 px-4 py-3 text-sm text-teal-800">
                     <Link :href="route('public.guest-book.kiosk')" class="font-semibold text-teal-900">Ke Buku Tamu</Link>
                 </div>
-                <div class="flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
+                <div v-if="user" class="flex items-center gap-2 rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
                     <Link :href="route('profile.edit')" class="font-semibold text-slate-900">Profil</Link>
                     <span>/</span>
                     <Link :href="route('logout')" method="post" as="button" class="font-semibold text-rose-600">Keluar</Link>
+                </div>
+                <div v-else class="flex items-center justify-center rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
+                    <Link :href="route('login')" class="font-semibold text-slate-900">Login Operator</Link>
                 </div>
             </div>
         </div>

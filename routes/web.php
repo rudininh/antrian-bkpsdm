@@ -20,6 +20,12 @@ Route::post('/buku-tamu', [PublicGuestBookController::class, 'upsertFromKiosk'])
 Route::get('/ambil-antrian/buku-tamu/{queue}', [PublicGuestBookController::class, 'show'])->name('public.guest-book.show');
 Route::put('/ambil-antrian/buku-tamu/{queue}', [PublicGuestBookController::class, 'upsert'])->name('public.guest-book.upsert');
 Route::get('/monitor-publik', [PublicQueueController::class, 'monitor'])->name('public.monitor');
+Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring.index');
+Route::post('/monitoring/{queue}/call', [MonitoringController::class, 'call'])->name('monitoring.call');
+Route::post('/monitoring/{queue}/recall', [MonitoringController::class, 'recall'])->name('monitoring.recall');
+Route::post('/monitoring/{queue}/start', [MonitoringController::class, 'start'])->name('monitoring.start');
+Route::post('/monitoring/{queue}/complete', [MonitoringController::class, 'complete'])->name('monitoring.complete');
+Route::post('/monitoring/{queue}/skip', [MonitoringController::class, 'skip'])->name('monitoring.skip');
 
 Route::get('/dashboard', DashboardController::class)
     ->middleware(['auth', 'verified'])
@@ -59,13 +65,6 @@ Route::middleware('auth')->group(function () {
         Route::post('/antrian', [QueueController::class, 'store'])->name('queues.store');
         Route::put('/antrian/{queue}', [QueueController::class, 'update'])->name('queues.update');
         Route::delete('/antrian/{queue}', [QueueController::class, 'destroy'])->name('queues.destroy');
-
-        Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring.index');
-        Route::post('/monitoring/{queue}/call', [MonitoringController::class, 'call'])->name('monitoring.call');
-        Route::post('/monitoring/{queue}/recall', [MonitoringController::class, 'recall'])->name('monitoring.recall');
-        Route::post('/monitoring/{queue}/start', [MonitoringController::class, 'start'])->name('monitoring.start');
-        Route::post('/monitoring/{queue}/complete', [MonitoringController::class, 'complete'])->name('monitoring.complete');
-        Route::post('/monitoring/{queue}/skip', [MonitoringController::class, 'skip'])->name('monitoring.skip');
     });
 });
 

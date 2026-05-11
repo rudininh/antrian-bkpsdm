@@ -10,8 +10,17 @@ const appName = computed(() => page.props.appName ?? 'Antrian BKPSDM');
 const user = computed(() => page.props.auth?.user);
 const permissions = computed(() => page.props.permissions ?? {});
 
-const navItems = computed(() =>
-    [
+const navItems = computed(() => {
+    if (!user.value) {
+        return [
+            { name: 'Panggilan', href: route('monitoring.index'), active: route().current('monitoring.*'), hint: 'Publik' },
+            { name: 'Ambil Nomor', href: route('public.queue.index'), active: route().current('public.queue.*') || route().current('public.monitor'), hint: 'Publik' },
+            { name: 'Buku Tamu', href: route('public.guest-book.kiosk'), active: route().current('public.guest-book.kiosk*'), hint: 'Publik' },
+            { name: 'Login', href: route('login'), active: route().current('login'), hint: 'Akses' },
+        ];
+    }
+
+    return [
         { name: 'Dashboard', href: route('dashboard'), active: route().current('dashboard'), hint: 'Utama' },
         permissions.value.manageMasterData
             ? { name: 'Layanan', href: route('services.index'), active: route().current('services.*'), hint: 'Admin' }
@@ -31,8 +40,8 @@ const navItems = computed(() =>
         { name: 'Ambil Nomor', href: route('public.queue.index'), active: route().current('public.queue.*') || route().current('public.monitor'), hint: 'Publik' },
         { name: 'Buku Tamu', href: route('public.guest-book.kiosk'), active: route().current('public.guest-book.kiosk*'), hint: 'Publik' },
         { name: 'Profil', href: route('profile.edit'), active: route().current('profile.*'), hint: 'Akun' },
-    ].filter(Boolean),
-);
+    ].filter(Boolean);
+});
 </script>
 
 <template>
@@ -41,7 +50,7 @@ const navItems = computed(() =>
             <p class="text-xs uppercase tracking-[0.35em] text-teal-300/80">BKPSDM</p>
             <h1 class="mt-3 text-2xl font-semibold">{{ appName }}</h1>
             <p class="mt-2 text-sm leading-6 text-slate-300">
-                Panel operasional untuk receptionist dalam mengelola antrian dan panggilan harian.
+                Panel operasional dan monitoring antrean harian.
             </p>
         </div>
 
@@ -65,7 +74,7 @@ const navItems = computed(() =>
                 <p class="mt-2 text-sm text-slate-300">Mode satu receptionist aktif dengan satu meja layanan, satu titik ambil nomor, dan satu monitor antrian.</p>
             </div>
 
-            <div class="rounded-3xl border border-white/10 bg-white/5 p-5">
+            <div v-if="user" class="rounded-3xl border border-white/10 bg-white/5 p-5">
                 <p class="text-xs uppercase tracking-[0.25em] text-slate-400">Login Aktif</p>
                 <p class="mt-2 text-lg font-semibold text-white">{{ user?.name }}</p>
                 <p class="text-sm text-slate-300">{{ user?.email }}</p>
@@ -90,6 +99,38 @@ const navItems = computed(() =>
                         class="inline-flex items-center justify-center rounded-2xl bg-rose-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-400"
                     >
                         Logout
+                    </Link>
+                </div>
+            </div>
+
+            <div v-else class="rounded-3xl border border-white/10 bg-white/5 p-5">
+                <p class="text-xs uppercase tracking-[0.25em] text-slate-400">Mode Publik</p>
+                <p class="mt-2 text-lg font-semibold text-white">Monitoring Tanpa Login</p>
+                <p class="text-sm text-slate-300">Gunakan halaman ini untuk melihat antrean aktif secara langsung.</p>
+                <div class="mt-4 flex flex-col gap-2">
+                    <Link
+                        :href="route('monitoring.index')"
+                        class="inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                    >
+                        Buka Monitoring
+                    </Link>
+                    <Link
+                        :href="route('public.queue.index')"
+                        class="inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                    >
+                        Buka Ambil Nomor
+                    </Link>
+                    <Link
+                        :href="route('public.guest-book.kiosk')"
+                        class="inline-flex items-center justify-center rounded-2xl bg-teal-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-400"
+                    >
+                        Buka Buku Tamu
+                    </Link>
+                    <Link
+                        :href="route('login')"
+                        class="inline-flex items-center justify-center rounded-2xl bg-rose-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-400"
+                    >
+                        Login Operator
                     </Link>
                 </div>
             </div>

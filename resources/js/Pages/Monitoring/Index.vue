@@ -19,6 +19,7 @@ const props = defineProps({
 });
 
 const page = usePage();
+const canManageQueues = computed(() => Boolean(page.props.permissions?.manageQueues));
 const flashMessage = computed(() => page.props.flash?.success);
 const now = ref(Date.now());
 const queueVoiceLabel = computed(() => (queueAlertMuted.value ? 'OFF' : 'ON'));
@@ -103,7 +104,17 @@ const statusLabels = {
             {{ flashMessage }}
         </div>
 
-        <section class="rounded-[2rem] border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-teal-50 px-5 py-4 shadow-[var(--shadow-panel)]">
+        <div
+            v-if="!canManageQueues"
+            class="rounded-[2rem] border border-sky-200 bg-sky-50 px-5 py-4 text-sm font-medium text-sky-800 shadow-[var(--shadow-panel)]"
+        >
+            Mode publik aktif. Halaman ini menampilkan antrean terbaru dan kontrol panggilan receptionist.
+        </div>
+
+        <section
+            v-if="canManageQueues"
+            class="rounded-[2rem] border border-amber-200 bg-gradient-to-r from-amber-50 via-white to-teal-50 px-5 py-4 shadow-[var(--shadow-panel)]"
+        >
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                     <p class="text-xs font-bold uppercase tracking-[0.28em] text-amber-700">Kontrol Suara</p>
