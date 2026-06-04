@@ -1,5 +1,6 @@
 <script setup>
 import { appRoute } from '@/utils/route';
+import PaginationControls from '@/Components/PaginationControls.vue';
 import DashboardLayout from '@/Layouts/DashboardLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import { computed } from 'vue';
@@ -254,6 +255,7 @@ const percentWidth = (value, max) => `${Math.max(8, Math.round((value / max) * 1
                     <div>
                         <p class="text-xs uppercase tracking-[0.25em] text-slate-500">Detail Antrian</p>
                         <h2 class="mt-2 text-xl font-semibold text-slate-950">10 data terbaru</h2>
+                        <p class="mt-1 text-sm text-slate-500">Ditampilkan 5 data per halaman supaya lebih ringkas dibaca.</p>
                     </div>
                     <span class="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">Queue</span>
                 </div>
@@ -269,15 +271,22 @@ const percentWidth = (value, max) => `${Math.max(8, Math.round((value / max) * 1
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white text-sm text-slate-600">
-                            <tr v-for="queue in report.recentQueues" :key="queue.ticket">
+                            <tr v-for="queue in report.recentQueues.data" :key="queue.ticket">
                                 <td class="px-4 py-4 font-semibold text-slate-900">{{ queue.ticket }}</td>
                                 <td class="px-4 py-4">{{ queue.service }}</td>
                                 <td class="px-4 py-4">{{ queue.status }}</td>
                                 <td class="px-4 py-4 text-slate-500">{{ queue.queuedAt }}</td>
                             </tr>
+                            <tr v-if="!(report.recentQueues.data?.length ?? 0)">
+                                <td colspan="4" class="px-4 py-6 text-center text-slate-500">
+                                    Belum ada antrian pada periode ini.
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
+
+                <PaginationControls class="mt-4" :pagination="report.recentQueues" label="antrian" />
             </article>
 
             <article class="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[var(--shadow-panel)]">
@@ -285,6 +294,7 @@ const percentWidth = (value, max) => `${Math.max(8, Math.round((value / max) * 1
                     <div>
                         <p class="text-xs uppercase tracking-[0.25em] text-slate-500">Detail Buku Tamu</p>
                         <h2 class="mt-2 text-xl font-semibold text-slate-950">10 feedback terbaru</h2>
+                        <p class="mt-1 text-sm text-slate-500">Ditampilkan 5 data per halaman supaya tidak terlalu padat.</p>
                     </div>
                     <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Guest</span>
                 </div>
@@ -300,15 +310,22 @@ const percentWidth = (value, max) => `${Math.max(8, Math.round((value / max) * 1
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 bg-white text-sm text-slate-600">
-                            <tr v-for="guest in report.recentGuestBooks" :key="guest.ticket + guest.submittedAt">
+                            <tr v-for="guest in report.recentGuestBooks.data" :key="guest.ticket + guest.submittedAt">
                                 <td class="px-4 py-4 font-semibold text-slate-900">{{ guest.guestName }}</td>
                                 <td class="px-4 py-4">{{ guest.institution }}</td>
                                 <td class="px-4 py-4">{{ guest.rating }}</td>
                                 <td class="px-4 py-4">{{ guest.wouldRecommend }}</td>
                             </tr>
+                            <tr v-if="!(report.recentGuestBooks.data?.length ?? 0)">
+                                <td colspan="4" class="px-4 py-6 text-center text-slate-500">
+                                    Belum ada feedback buku tamu pada periode ini.
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
+
+                <PaginationControls class="mt-4" :pagination="report.recentGuestBooks" label="feedback" />
             </article>
         </section>
     </div>

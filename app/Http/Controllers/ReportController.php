@@ -6,10 +6,13 @@ use App\Models\GuestBook;
 use App\Models\Queue;
 use App\Support\XlsxReportExporter;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -141,35 +144,41 @@ class ReportController extends Controller
             })
             ->all();
 
-        $recentQueues = $queues
-            ->take(10)
-            ->values()
-            ->map(fn (Queue $queue) => [
-                'ticket' => $queue->ticket_number,
-                'service' => $queue->service?->name ?? '-',
-                'counter' => $queue->counter?->name ?? 'Belum dipanggil',
-                'status' => $queueStatusMap[$queue->status] ?? ucfirst($queue->status),
-                'queueDate' => $queue->queue_date?->format('d M Y'),
-                'queuedAt' => $queue->queued_at?->format('H:i'),
-                'calledAt' => $queue->called_at?->format('H:i') ?? '-',
-                'completedAt' => $queue->completed_at?->format('H:i') ?? '-',
-                'waitMinutes' => $queue->called_at && $queue->queued_at ? $queue->queued_at->diffInMinutes($queue->called_at) : null,
-            ])
-            ->all();
+        $recentQueues = $this->paginateRecentItems(
+            $queues
+                ->take(10)
+                ->values()
+                ->map(fn (Queue $queue) => [
+                    'ticket' => $queue->ticket_number,
+                    'service' => $queue->service?->name ?? '-',
+                    'counter' => $queue->counter?->name ?? 'Belum dipanggil',
+                    'status' => $queueStatusMap[$queue->status] ?? ucfirst($queue->status),
+                    'queueDate' => $queue->queue_date?->format('d M Y'),
+                    'queuedAt' => $queue->queued_at?->format('H:i'),
+                    'calledAt' => $queue->called_at?->format('H:i') ?? '-',
+                    'completedAt' => $queue->completed_at?->format('H:i') ?? '-',
+                    'waitMinutes' => $queue->called_at && $queue->queued_at ? $queue->queued_at->diffInMinutes($queue->called_at) : null,
+                ]),
+            $request,
+            'queues_page',
+        );
 
-        $recentGuestBooks = $guestBooks
-            ->take(10)
-            ->values()
-            ->map(fn (GuestBook $guestBook) => [
-                'ticket' => $guestBook->queue?->ticket_number ?? '-',
-                'guestName' => $guestBook->guest_name,
-                'institution' => $guestBook->institution ?: '-',
-                'consultantName' => $guestBook->consultant_name ?: '-',
-                'rating' => $guestBook->rating ?? '-',
-                'wouldRecommend' => $guestBook->would_recommend === null ? '-' : ($guestBook->would_recommend ? 'Ya' : 'Tidak'),
-                'submittedAt' => $guestBook->submitted_at?->format('d M Y H:i') ?? '-',
-            ])
-            ->all();
+        $recentGuestBooks = $this->paginateRecentItems(
+            $guestBooks
+                ->take(10)
+                ->values()
+                ->map(fn (GuestBook $guestBook) => [
+                    'ticket' => $guestBook->queue?->ticket_number ?? '-',
+                    'guestName' => $guestBook->guest_name,
+                    'institution' => $guestBook->institution ?: '-',
+                    'consultantName' => $guestBook->consultant_name ?: '-',
+                    'rating' => $guestBook->rating ?? '-',
+                    'wouldRecommend' => $guestBook->would_recommend === null ? '-' : ($guestBook->would_recommend ? 'Ya' : 'Tidak'),
+                    'submittedAt' => $guestBook->submitted_at?->format('d M Y H:i') ?? '-',
+                ]),
+            $request,
+            'guest_books_page',
+        );
 
         $totalQueues = $queues->count();
         $activeQueues = $queues->whereIn('status', ['waiting', 'called', 'serving'])->count();
@@ -337,6 +346,34 @@ class ReportController extends Controller
         }
 
         return $rows;
+    }
+
+    protected function paginateRecentItems(Collection $items, Request $request, string $pageName, int $perPage = 5): LengthAwarePaginator
+    {
+        $page = Paginator::resolveCurrentPage($pageName);
+        $total = $items->count();
+        $slice = $items->forPage($page, $perPage)->values();
+
+        $paginator = new LengthAwarePaginator(
+            $slice,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => $request->url(),
+                'pageName' => $pageName,
+            ]
+        );
+
+        $query = collect($request->query())
+            ->except($pageName)
+            ->all();
+
+        if (! empty($query)) {
+            $paginator->appends($query);
+        }
+
+        return $paginator;
     }
 
     /**
