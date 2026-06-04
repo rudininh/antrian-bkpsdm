@@ -128,7 +128,7 @@ class ReportController extends Controller
             ? (int) round(($recommendVotes->where('would_recommend', true)->count() / $recommendVotes->count()) * 100)
             : 0;
 
-        $timeline = collect($this->dateRangeSequence($start, $end))
+        $timelineItems = collect($this->dateRangeSequence($start, $end))
             ->map(function (Carbon $date) use ($queues, $guestBooks) {
                 $day = $date->toDateString();
 
@@ -142,7 +142,19 @@ class ReportController extends Controller
                     })->count(),
                 ];
             })
-            ->all();
+            ->values();
+
+        $timeline = $this->paginateRecentItems(
+            $timelineItems,
+            $request,
+            'timeline_page',
+            5,
+        );
+
+        $timelineMax = max(
+            $timelineItems->flatMap(fn (array $item) => [$item['queueTotal'], $item['guestBookTotal']])->max() ?? 0,
+            1,
+        );
 
         $recentQueues = $this->paginateRecentItems(
             $queues
@@ -234,7 +246,9 @@ class ReportController extends Controller
             'queueStatus' => $queueStatus,
             'serviceBreakdown' => $serviceBreakdown,
             'ratingBreakdown' => $ratingBreakdown,
-            'timeline' => $timeline,
+            'timeline' => $timelineItems->all(),
+            'timelinePagination' => $timeline,
+            'timelineMax' => $timelineMax,
             'recentQueues' => $recentQueues,
             'recentGuestBooks' => $recentGuestBooks,
             'summary' => [

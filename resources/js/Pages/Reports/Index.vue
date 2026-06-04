@@ -196,12 +196,12 @@ const percentWidth = (value, max) => `${Math.max(8, Math.round((value / max) * 1
                         <h2 class="mt-2 text-2xl font-semibold text-slate-950">Timeline antrian dan buku tamu</h2>
                     </div>
                     <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">
-                        {{ report.timeline.length }} hari
+                        {{ report.timelinePagination.total }} hari
                     </span>
                 </div>
 
                 <div class="mt-6 space-y-4">
-                    <div v-for="item in report.timeline" :key="item.date" class="rounded-2xl bg-slate-50 p-4">
+                    <div v-for="item in report.timelinePagination.data" :key="item.date" class="rounded-2xl bg-slate-50 p-4">
                         <div class="flex items-center justify-between gap-4 text-sm">
                             <span class="font-semibold text-slate-900">{{ item.date }}</span>
                             <div class="flex items-center gap-3 text-slate-500">
@@ -246,6 +246,8 @@ const percentWidth = (value, max) => `${Math.max(8, Math.round((value / max) * 1
                         </div>
                     </div>
                 </div>
+
+                <PaginationControls class="mt-4" :pagination="report.timelinePagination" label="hari" />
             </article>
         </section>
 
