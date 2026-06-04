@@ -59,6 +59,8 @@ if (config('auth.login_enabled')) {
             Route::get('/laporan', [ReportController::class, 'index'])->name('reports.index');
             Route::get('/laporan/export/excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
             Route::get('/laporan/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
+            Route::get('/laporan/export/buku-tamu/excel', [ReportController::class, 'exportGuestBooksExcel'])->name('reports.guest-books.export.excel');
+            Route::get('/laporan/export/buku-tamu/pdf', [ReportController::class, 'exportGuestBooksPdf'])->name('reports.guest-books.export.pdf');
         });
 
         Route::middleware('can:manage-queues')->group(function () {
@@ -87,6 +89,8 @@ if (config('auth.login_enabled')) {
     Route::get('/laporan', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/laporan/export/excel', [ReportController::class, 'exportExcel'])->name('reports.export.excel');
     Route::get('/laporan/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
+    Route::get('/laporan/export/buku-tamu/excel', [ReportController::class, 'exportGuestBooksExcel'])->name('reports.guest-books.export.excel');
+    Route::get('/laporan/export/buku-tamu/pdf', [ReportController::class, 'exportGuestBooksPdf'])->name('reports.guest-books.export.pdf');
 
     Route::get('/antrian', [QueueController::class, 'index'])->name('queues.index');
     Route::post('/antrian', [QueueController::class, 'store'])->name('queues.store');

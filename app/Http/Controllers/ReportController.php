@@ -64,6 +64,35 @@ class ReportController extends Controller
             ->download($filename);
     }
 
+    public function exportGuestBooksExcel(Request $request, XlsxReportExporter $exporter): BinaryFileResponse
+    {
+        Gate::authorize('manage-reports');
+
+        $report = $this->buildGuestBookReportData($request);
+        $filename = $this->guestBookFilename($report, 'xlsx');
+        $path = $this->temporaryPath($filename);
+
+        $exporter->export($this->buildGuestBookExcelSheets($report), $path);
+
+        return response()
+            ->download($path, $filename, ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'])
+            ->deleteFileAfterSend(true);
+    }
+
+    public function exportGuestBooksPdf(Request $request)
+    {
+        Gate::authorize('manage-reports');
+
+        $report = $this->buildGuestBookReportData($request);
+        $filename = $this->guestBookFilename($report, 'pdf');
+
+        return Pdf::loadView('reports.guest-books', [
+            'report' => $report,
+        ])
+            ->setPaper('a4', 'landscape')
+            ->download($filename);
+    }
+
     protected function buildReportData(Request $request): array
     {
         [$start, $end] = $this->resolveRange($request);
@@ -266,6 +295,63 @@ class ReportController extends Controller
         ];
     }
 
+    protected function buildGuestBookReportData(Request $request): array
+    {
+        [$start, $end] = $this->resolveRange($request);
+
+        $guestBooks = GuestBook::query()
+            ->with(['queue.service', 'queue.counter'])
+            ->whereBetween('submitted_at', [$start->toDateString().' 00:00:00', $end->toDateString().' 23:59:59'])
+            ->orderByDesc('submitted_at')
+            ->get();
+
+        $ratingBreakdown = collect(range(1, 5))
+            ->map(fn (int $rating) => [
+                'rating' => $rating,
+                'total' => $guestBooks->where('rating', $rating)->count(),
+            ])
+            ->values()
+            ->all();
+
+        $recommendVotes = $guestBooks->filter(fn (GuestBook $guestBook) => $guestBook->would_recommend !== null);
+        $recommendationRate = $recommendVotes->count() > 0
+            ? (int) round(($recommendVotes->where('would_recommend', true)->count() / $recommendVotes->count()) * 100)
+            : 0;
+
+        $serviceBreakdown = $guestBooks
+            ->groupBy(fn (GuestBook $guestBook) => $guestBook->queue?->service?->name ?? 'Tanpa Antrian')
+            ->map(fn ($group, string $service) => [
+                'service' => $service,
+                'total' => $group->count(),
+            ])
+            ->sortByDesc('total')
+            ->values()
+            ->all();
+
+        $averageRating = (float) ($guestBooks->whereNotNull('rating')->avg('rating') ?? 0);
+
+        return [
+            'range' => [
+                'start' => $start->toDateString(),
+                'end' => $end->toDateString(),
+                'startLabel' => $start->translatedFormat('d M Y'),
+                'endLabel' => $end->translatedFormat('d M Y'),
+                'rangeLabel' => $this->rangeLabel($start, $end),
+            ],
+            'summary' => [
+                'guestBookTotal' => $guestBooks->count(),
+                'averageRating' => $averageRating,
+                'recommendationRate' => $recommendationRate,
+                'feedbackFilled' => $guestBooks->whereNotNull('feedback')->count(),
+                'topService' => $serviceBreakdown[0]['service'] ?? '-',
+            ],
+            'ratingBreakdown' => $ratingBreakdown,
+            'serviceBreakdown' => $serviceBreakdown,
+            'guestBooks' => $guestBooks->values(),
+            'detailRows' => $this->buildGuestBookDetailRows($guestBooks),
+        ];
+    }
+
     protected function buildExcelSheets(array $report): array
     {
         return [
@@ -280,6 +366,20 @@ class ReportController extends Controller
             [
                 'title' => 'Buku Tamu',
                 'rows' => $report['guestBookExportRows'],
+            ],
+        ];
+    }
+
+    protected function buildGuestBookExcelSheets(array $report): array
+    {
+        return [
+            [
+                'title' => 'Ringkasan Buku Tamu',
+                'rows' => $this->buildGuestBookSummarySheetRows($report),
+            ],
+            [
+                'title' => 'Buku Tamu',
+                'rows' => $report['detailRows'],
             ],
         ];
     }
@@ -360,6 +460,54 @@ class ReportController extends Controller
         }
 
         return $rows;
+    }
+
+    protected function buildGuestBookDetailRows($guestBooks): array
+    {
+        $rows = [[
+            'Waktu Submit',
+            'Nomor Antrian',
+            'Layanan',
+            'Nama Tamu',
+            'Instansi',
+            'Telepon',
+            'Tujuan Kunjungan',
+            'Nama Konsultan',
+            'Rating',
+            'Rekomendasi',
+            'Feedback',
+        ]];
+
+        foreach ($guestBooks as $guestBook) {
+            $rows[] = [
+                $guestBook->submitted_at?->format('d M Y H:i') ?? '-',
+                $guestBook->queue?->ticket_number ?? '-',
+                $guestBook->queue?->service?->name ?? '-',
+                $guestBook->guest_name,
+                $guestBook->institution ?: '-',
+                $guestBook->phone_number ?: '-',
+                $guestBook->visit_purpose ?: '-',
+                $guestBook->consultant_name ?: '-',
+                $guestBook->rating ?? '-',
+                $guestBook->would_recommend === null ? '-' : ($guestBook->would_recommend ? 'Ya' : 'Tidak'),
+                $guestBook->feedback ?: '-',
+            ];
+        }
+
+        return $rows;
+    }
+
+    protected function buildGuestBookSummarySheetRows(array $report): array
+    {
+        return [
+            ['Laporan Buku Tamu', ''],
+            ['Periode', $report['range']['startLabel'].' s.d. '.$report['range']['endLabel']],
+            ['Total Buku Tamu', $report['summary']['guestBookTotal']],
+            ['Rata-rata Rating', number_format($report['summary']['averageRating'], 1)],
+            ['Rekomendasi', $report['summary']['recommendationRate'].'%'],
+            ['Feedback Terisi', $report['summary']['feedbackFilled']],
+            ['Layanan Teratas', $report['summary']['topService']],
+        ];
     }
 
     protected function paginateRecentItems(Collection $items, Request $request, string $pageName, int $perPage = 5): LengthAwarePaginator
@@ -454,5 +602,15 @@ class ReportController extends Controller
         File::ensureDirectoryExists($directory);
 
         return $directory.DIRECTORY_SEPARATOR.$filename;
+    }
+
+    protected function guestBookFilename(array $report, string $extension): string
+    {
+        return sprintf(
+            'laporan-buku-tamu-%s-sampai-%s.%s',
+            Carbon::parse($report['range']['start'])->format('Ymd'),
+            Carbon::parse($report['range']['end'])->format('Ymd'),
+            $extension
+        );
     }
 }

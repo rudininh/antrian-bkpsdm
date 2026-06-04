@@ -69,6 +69,29 @@ const percentWidth = (value, max) => `${Math.max(8, Math.round((value / max) * 1
                             Export PDF
                         </a>
                     </div>
+
+                    <div class="rounded-3xl border border-white/10 bg-white/5 p-4">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <p class="text-xs uppercase tracking-[0.25em] text-teal-200">Export Buku Tamu</p>
+                                <p class="mt-1 text-sm text-slate-300">File khusus untuk data tamu, rating, rekomendasi, dan feedback pada periode terpilih.</p>
+                            </div>
+                            <div class="flex flex-wrap gap-3">
+                                <a
+                                    :href="route('reports.guest-books.export.excel', { start: report.range.start, end: report.range.end })"
+                                    class="rounded-2xl bg-teal-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-teal-300"
+                                >
+                                    Excel Buku Tamu
+                                </a>
+                                <a
+                                    :href="route('reports.guest-books.export.pdf', { start: report.range.start, end: report.range.end })"
+                                    class="rounded-2xl bg-violet-200 px-5 py-3 text-sm font-semibold text-violet-950 transition hover:bg-violet-100"
+                                >
+                                    PDF Buku Tamu
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="rounded-[1.75rem] border border-white/10 bg-white/5 p-5">
