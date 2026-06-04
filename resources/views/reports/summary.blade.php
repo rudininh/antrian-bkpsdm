@@ -194,9 +194,9 @@
 </head>
 <body>
     @php
-        $queueMax = max(array_column($report['queueStatus'], 'total') ?: [1]);
-        $ratingMax = max(array_column($report['ratingBreakdown'], 'total') ?: [1]);
-        $serviceMax = max(array_column($report['serviceBreakdown'], 'total') ?: [1]);
+        $queueMax = max(1, max(array_column($report['queueStatus'], 'total') ?: [1]));
+        $ratingMax = max(1, max(array_column($report['ratingBreakdown'], 'total') ?: [1]));
+        $serviceMax = max(1, max(array_column($report['serviceBreakdown'], 'total') ?: [1]));
     @endphp
 
     <div class="header">

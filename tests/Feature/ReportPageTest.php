@@ -81,6 +81,27 @@ class ReportPageTest extends TestCase
             ->assertDownload('laporan-operasional-'.Carbon::today()->subDay()->format('Ymd').'-sampai-'.Carbon::today()->format('Ymd').'.pdf');
     }
 
+    public function test_reports_can_be_exported_when_there_is_no_operational_data(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('reports.export.pdf', [
+                'start' => Carbon::today()->subDay()->toDateString(),
+                'end' => Carbon::today()->toDateString(),
+            ]))
+            ->assertDownload('laporan-operasional-'.Carbon::today()->subDay()->format('Ymd').'-sampai-'.Carbon::today()->format('Ymd').'.pdf');
+
+        $this->actingAs($admin)
+            ->get(route('reports.export.excel', [
+                'start' => Carbon::today()->subDay()->toDateString(),
+                'end' => Carbon::today()->toDateString(),
+            ]))
+            ->assertDownload('laporan-operasional-'.Carbon::today()->subDay()->format('Ymd').'-sampai-'.Carbon::today()->format('Ymd').'.xlsx');
+    }
+
     public function test_recent_report_tables_are_paginated_five_items_per_page(): void
     {
         $this->seedPaginatedReportData();
