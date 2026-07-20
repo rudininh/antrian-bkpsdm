@@ -24,3 +24,12 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Sensitive/generated personnel data (never commit to a public repository)
+*.xls
+*.xlsx
+*.xlsm
+/storage/app/reports/
+/storage/app/exports/
+/public/data/**/*.json
+/resources/data/**/*.json
